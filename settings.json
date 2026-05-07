@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "steering": {
+      "command": "acp-steering-mcp",
+      "env": {
+        "STEERING_REPOS_PATH": "~/.acp/repos"
+      }
+    },
+    "debug-tracer": {
+      "command": "python",
+      "args": [
+        "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai/server.py"
+      ],
+      "cwd": "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai",
+      "env": {
+        "PYTHONPATH": "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai"
+      }
+    }
+  }
+}
