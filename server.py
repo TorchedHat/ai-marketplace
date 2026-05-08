@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Debug Tracer MCP Server
+torch-compile-ai MCP Server
 
-Parsers for each torch.compile pipeline stage:
+9 parsers aligned with torch.compile IR levels:
 - Dynamo: Graph breaks, FX graphs, pre-grad passes
-- AOT: Functionalization, joint graph, partitioning, post-grad
-- Inductor: Lowering, fusion, loopbody, codegen
+- AOT: Joint graph, partitioned graphs, post-grad passes
+- Inductor: Fusion decisions, IR post-fusion, output code
 """
 
 import asyncio
@@ -13,234 +13,200 @@ import asyncio
 from mcp.server import Server
 from mcp.types import TextContent, Tool
 
-app = Server("debug-tracer")
+app = Server("torch-compile-ai")
 
 
 @app.list_tools()
 async def list_tools() -> list[Tool]:
-    """List available debug tools for each compilation stage."""
+    """List 9 IR-level parsers for torch.compile debug output."""
     return [
-        # ============================================================
-        # Dynamo Stage Tools
-        # ============================================================
+        # ================================================================
+        # Dynamo Stage (3 tools)
+        # ================================================================
         Tool(
             name="parse_graph_breaks",
-            description="Parse TORCH_LOGS graph_breaks output (Dynamo stage)",
+            description="Parse TORCH_LOGS='graph_breaks' stdout - identifies graph breaks and reasons",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "log_content": {"type": "string", "description": "TORCH_LOGS=graph_breaks output"}
+                    "log_content": {
+                        "type": "string",
+                        "description": "Stdout from TORCH_LOGS='graph_breaks'"
+                    }
                 },
                 "required": ["log_content"]
             }
         ),
         Tool(
-            name="analyze_fx_graph",
-            description="Analyze FX graph structure (Dynamo stage)",
+            name="parse_fx_graph",
+            description="Parse FX graph file content (fx_graph_readable.py from TORCH_LOGS='dynamo')",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "fx_graph_path": {"type": "string", "description": "Path to fx_graph_readable.py"}
+                    "graph_content": {
+                        "type": "string",
+                        "description": "Content of fx_graph_readable.py file"
+                    }
                 },
-                "required": ["fx_graph_path"]
+                "required": ["graph_content"]
             }
         ),
         Tool(
-            name="analyze_pre_grad_passes",
-            description="Analyze pre-grad pass effects (Dynamo stage)",
+            name="parse_pre_grad_passes",
+            description="Parse pre-grad pass effects (before/after FX graphs from TORCH_LOGS='pre_grad_graphs')",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "before_path": {"type": "string", "description": "fx_graph_readable.py"},
-                    "after_path": {"type": "string", "description": "fx_graph_transformed.py"}
+                    "before_content": {
+                        "type": "string",
+                        "description": "Content of fx_graph_readable.py (before passes)"
+                    },
+                    "after_content": {
+                        "type": "string",
+                        "description": "Content of fx_graph_transformed.py (after passes)"
+                    }
                 },
-                "required": ["before_path", "after_path"]
+                "required": ["before_content", "after_content"]
             }
         ),
 
-        # ============================================================
-        # AOT Stage Tools
-        # ============================================================
+        # ================================================================
+        # AOT Stage (3 tools)
+        # ================================================================
         Tool(
-            name="analyze_functionalization",
-            description="Analyze mutation removal (AOT stage)",
+            name="parse_aot_joint_graph",
+            description="Parse AOT joint graph file (model__*__joint_*.py from TORCH_LOGS='aot_joint_graph')",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "graph_path": {"type": "string", "description": "Path to AOT forward graph"}
+                    "graph_content": {
+                        "type": "string",
+                        "description": "Content of joint graph file"
+                    }
                 },
-                "required": ["graph_path"]
+                "required": ["graph_content"]
             }
         ),
         Tool(
-            name="analyze_joint_graph",
-            description="Analyze joint forward+backward graph (AOT stage)",
+            name="parse_aot_graphs",
+            description="Parse partitioned AOT graphs (forward/backward from TORCH_LOGS='aot_graphs')",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "joint_graph_path": {"type": "string", "description": "model__*__joint_*.py"}
+                    "forward_content": {
+                        "type": "string",
+                        "description": "Content of forward graph file"
+                    },
+                    "backward_content": {
+                        "type": "string",
+                        "description": "Content of backward graph file (optional)"
+                    }
                 },
-                "required": ["joint_graph_path"]
+                "required": ["forward_content"]
             }
         ),
         Tool(
-            name="analyze_partitioning",
-            description="Analyze AOT partitioning decisions (AOT stage)",
+            name="parse_post_grad_passes",
+            description="Parse post-grad pass output (TORCH_LOGS='post_grad_graphs' stdout or files)",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "joint_path": {"type": "string", "description": "Joint graph file"},
-                    "forward_path": {"type": "string", "description": "Forward graph file"},
-                    "backward_path": {"type": "string", "description": "Backward graph file"}
-                },
-                "required": ["joint_path", "forward_path"]
-            }
-        ),
-        Tool(
-            name="analyze_post_grad_passes",
-            description="Analyze post-grad optimization effects (AOT stage)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "log_content": {"type": "string", "description": "TORCH_LOGS=post_grad_graphs output"}
+                    "log_content": {
+                        "type": "string",
+                        "description": "Stdout or file content from post_grad_graphs logging"
+                    }
                 },
                 "required": ["log_content"]
             }
         ),
 
-        # ============================================================
-        # Inductor Stage Tools
-        # ============================================================
-        Tool(
-            name="analyze_lowering",
-            description="Analyze ATen → IR node lowering (Inductor stage)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "ir_file": {"type": "string", "description": "ir_*.txt path"}
-                },
-                "required": ["ir_file"]
-            }
-        ),
+        # ================================================================
+        # Inductor Stage (3 tools)
+        # ================================================================
         Tool(
             name="parse_fusion_decisions",
-            description="Parse fusion decisions and explain (Inductor stage)",
+            description="Parse fusion decisions from stdout (TORCH_LOGS='fusion,schedule')",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "log_content": {"type": "string", "description": "TORCH_LOGS=fusion,schedule output"}
+                    "log_content": {
+                        "type": "string",
+                        "description": "Stdout from TORCH_LOGS='fusion,schedule'"
+                    }
                 },
                 "required": ["log_content"]
             }
         ),
         Tool(
-            name="analyze_loopbody",
-            description="Analyze LoopBody IR (ops.* operations, Inductor stage)",
+            name="parse_ir_post_fusion",
+            description="Parse LoopBody IR (ir_post_fusion_*.txt from TORCH_LOGS='ir_post_fusion')",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "ir_post_fusion_path": {"type": "string", "description": "ir_post_fusion_*.txt path"}
-                },
-                "required": ["ir_post_fusion_path"]
-            }
-        ),
-        Tool(
-            name="analyze_triton_codegen",
-            description="Analyze generated Triton kernel (Inductor stage)",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "output_code_path": {"type": "string", "description": "output_code.py path"}
-                },
-                "required": ["output_code_path"]
-            }
-        ),
-
-        # ============================================================
-        # Cross-Stage Tools
-        # ============================================================
-        Tool(
-            name="trace_operation",
-            description="Trace operation through all compilation stages",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "operation": {"type": "string", "description": "Operation name (e.g., torch.relu)"},
-                    "debug_dir": {"type": "string", "description": "Compilation output directory"}
-                },
-                "required": ["operation", "debug_dir"]
-            }
-        ),
-        Tool(
-            name="search_ir",
-            description="Search IR files for patterns across compilation stages with line numbers and context",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "pattern": {"type": "string", "description": "Regex pattern to search for"},
-                    "stage": {
+                    "ir_content": {
                         "type": "string",
-                        "enum": ["dynamo", "aot", "inductor", "loopbody", "all"],
-                        "description": "Stage to search: dynamo (FX graphs), aot (AOT autograd), inductor (IR), loopbody (ops.*), or all"
-                    },
-                    "debug_dir": {"type": "string", "description": "Path to torch_compile_debug directory"}
+                        "description": "Content of ir_post_fusion_*.txt file"
+                    }
                 },
-                "required": ["pattern", "stage", "debug_dir"]
+                "required": ["ir_content"]
             }
-        )
+        ),
+        Tool(
+            name="parse_output_code",
+            description="Parse generated kernel code (output_code.py from TORCH_LOGS='output_code')",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "code_content": {
+                        "type": "string",
+                        "description": "Content of output_code.py file"
+                    }
+                },
+                "required": ["code_content"]
+            }
+        ),
     ]
 
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    """Route tool calls to appropriate analyzers."""
+    """Route tool calls to appropriate parsers."""
 
-    # Import analyzers
-    from analyzers import dynamo_trace, aot_trace, inductor_trace, cross_stage_trace
+    # Import parsers
+    from analyzers import (
+        aot_parsers,
+        dynamo_parsers,
+        inductor_parsers,
+    )
 
-    # Dynamo stage tools
+    # Dynamo stage
     if name == "parse_graph_breaks":
-        result = await dynamo_trace.parse_graph_breaks(arguments["log_content"])
-    elif name == "analyze_fx_graph":
-        result = await dynamo_trace.analyze_fx_graph(arguments["fx_graph_path"])
-    elif name == "analyze_pre_grad_passes":
-        result = await dynamo_trace.analyze_pre_grad_passes(
-            arguments["before_path"], arguments["after_path"]
+        result = await dynamo_parsers.parse_graph_breaks(arguments["log_content"])
+    elif name == "parse_fx_graph":
+        result = await dynamo_parsers.parse_fx_graph(arguments["graph_content"])
+    elif name == "parse_pre_grad_passes":
+        result = await dynamo_parsers.parse_pre_grad_passes(
+            arguments["before_content"], arguments["after_content"]
         )
 
-    # AOT stage tools
-    elif name == "analyze_functionalization":
-        result = await aot_trace.analyze_functionalization(arguments["graph_path"])
-    elif name == "analyze_joint_graph":
-        result = await aot_trace.analyze_joint_graph(arguments["joint_graph_path"])
-    elif name == "analyze_partitioning":
-        result = await aot_trace.analyze_partitioning(
-            arguments["joint_path"],
-            arguments["forward_path"],
-            arguments.get("backward_path")
+    # AOT stage
+    elif name == "parse_aot_joint_graph":
+        result = await aot_parsers.parse_aot_joint_graph(arguments["graph_content"])
+    elif name == "parse_aot_graphs":
+        result = await aot_parsers.parse_aot_graphs(
+            arguments["forward_content"],
+            arguments.get("backward_content")
         )
-    elif name == "analyze_post_grad_passes":
-        result = await aot_trace.analyze_post_grad_passes(arguments["log_content"])
+    elif name == "parse_post_grad_passes":
+        result = await aot_parsers.parse_post_grad_passes(arguments["log_content"])
 
-    # Inductor stage tools
-    elif name == "analyze_lowering":
-        result = await inductor_trace.analyze_lowering(arguments["ir_file"])
+    # Inductor stage
     elif name == "parse_fusion_decisions":
-        result = await inductor_trace.parse_fusion_decisions(arguments["log_content"])
-    elif name == "analyze_loopbody":
-        result = await inductor_trace.analyze_loopbody(arguments["ir_post_fusion_path"])
-    elif name == "analyze_triton_codegen":
-        result = await inductor_trace.analyze_triton_codegen(arguments["output_code_path"])
-
-    # Cross-stage tools
-    elif name == "trace_operation":
-        result = await cross_stage_trace.trace_operation(
-            arguments["operation"], arguments["debug_dir"]
-        )
-    elif name == "search_ir":
-        result = await cross_stage_trace.search_ir(
-            arguments["pattern"], arguments["stage"], arguments["debug_dir"]
-        )
+        result = await inductor_parsers.parse_fusion_decisions(arguments["log_content"])
+    elif name == "parse_ir_post_fusion":
+        result = await inductor_parsers.parse_ir_post_fusion(arguments["ir_content"])
+    elif name == "parse_output_code":
+        result = await inductor_parsers.parse_output_code(arguments["code_content"])
 
     else:
         raise ValueError(f"Unknown tool: {name}")

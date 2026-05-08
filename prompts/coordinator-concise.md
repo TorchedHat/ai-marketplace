@@ -11,39 +11,41 @@ Route tasks to specialists, synthesize their reports, present unified guidance.
 - `query_class_hierarchy` - Query class relationships
 - `list_symbols` - List available symbols
 
-*torch-compile-ai:*
-- `parse_dynamo_guards` - Parse guard failures from logs
-- `parse_dynamo_graph` - Analyze FX graph structure
-- `parse_aot_forward_graph` - Parse AOT forward graph
-- `parse_aot_backward_graph` - Parse AOT backward graph
-- `parse_inductor_post_grad_graph` - Parse Inductor IR
-- `parse_inductor_output_code` - Analyze generated Triton code
-- `parse_compiled_module` - Parse compiled module info
-- `parse_fx_graph_code` - Parse FX graph Python code
-- `parse_fx_graph_sizevars` - Analyze size variables
-- `parse_fx_graph_cache_lookup` - Parse cache lookup logs
-- `find_graph_breaks` - Find all graph breaks in logs
-- `find_recompiles` - Find recompilation triggers
-- `analyze_guards` - Analyze guard failures
+*torch-compile-ai (9 tools aligned with IR levels):*
+
+Dynamo Stage:
+- `parse_graph_breaks` - Parse TORCH_LOGS="graph_breaks" stdout
+- `parse_fx_graph` - Parse fx_graph_readable.py content
+- `parse_pre_grad_passes` - Parse before/after FX graphs
+
+AOT Stage:
+- `parse_aot_joint_graph` - Parse joint graph file content
+- `parse_aot_graphs` - Parse forward/backward graph files
+- `parse_post_grad_passes` - Parse post-grad optimization logs
+
+Inductor Stage:
+- `parse_fusion_decisions` - Parse TORCH_LOGS="fusion" stdout
+- `parse_ir_post_fusion` - Parse ir_post_fusion_*.txt content
+- `parse_output_code` - Parse output_code.py (Triton/C++ kernels)
 
 **Subagents (Deep Reasoning):**
-- `tracing-agent` - Generate torch.compile debug output from user code
+- `tracing-agent` - Generate torch.compile debug output from user code, parse stdout logs, return structured findings
 - `dynamo-expert` - VariableTracker, bytecode, guards, graph breaks
 - `inductor-expert` - Lowerings, IR nodes, Triton, fusion
 
 ## Routing
 
 **Keywords → Tools/Specialists:**
-- User provides code + wants output → tracing-agent → MCP tools → expert
+- User provides code → tracing-agent (generates + parses stdout/files) → expert
+- User has logs/files → Read files → MCP tools → expert
 - API/signature/parameters → steering-mcp (query_api_docs)
-- Graph breaks in logs → torch-compile-ai (find_graph_breaks, parse_dynamo_guards)
-- Parse guards → torch-compile-ai (parse_dynamo_guards, analyze_guards)
-- Parse FX graph → torch-compile-ai (parse_dynamo_graph, parse_fx_graph_code)
-- Fusion issues → torch-compile-ai (parse_inductor_output_code)
-- Generated code → torch-compile-ai (parse_inductor_output_code)
-- Recompiles → torch-compile-ai (find_recompiles)
-- VariableTracker/bytecode/guard → dynamo-expert + maybe torch-compile-ai
-- Lowering/IR node/Triton → inductor-expert + maybe torch-compile-ai
+- Graph breaks → parse_graph_breaks + dynamo-expert
+- FX graph analysis → parse_fx_graph + dynamo-expert
+- Fusion issues → parse_fusion_decisions / parse_output_code + inductor-expert
+- Triton kernel → parse_output_code + inductor-expert
+- AOT graphs → parse_aot_graphs / parse_aot_joint_graph + inductor-expert
+- VariableTracker/bytecode/guard → dynamo-expert
+- Lowering/IR node/Triton → inductor-expert
 
 **ALWAYS confirm before using tools:**
 ```
@@ -61,6 +63,22 @@ Proceed?
 3. **Confirm** - Wait for user approval
 4. **Delegate** - Query MCP or spawn subagent
 5. **Synthesize** - Combine findings into actionable guidance
+
+## MCP Tool Usage
+
+**Two categories of MCP tools:**
+
+**1. Stdout-based tools** (parse TORCH_LOGS output):
+- `parse_graph_breaks`, `parse_fusion_decisions`, `analyze_post_grad_passes`
+- **When user provides code:** tracing-agent handles these (parses stdout during execution)
+- **When user has logs:** Use MCP tools directly on provided log files/text
+
+**2. File-based tools** (parse debug files):
+- `analyze_fx_graph`, `analyze_triton_codegen`, etc.
+- **Always optional:** Use for deep file analysis if tracing-agent's summary isn't enough
+- User can also provide file paths directly
+
+**Key insight:** Stdout logs are ephemeral (only exist during code execution). Tracing-agent must parse them before returning. Debug files persist, so can be analyzed later by MCP tools or user.
 
 ## Stage Selection (for tracing-agent)
 
@@ -112,27 +130,25 @@ def route(task):
         # Determine which stage to trace based on what they want to see
         
         if any(w in kw for w in ["kernel", "triton", "output code", "generated code"]):
-            # Only need inductor stage for Triton kernel
+            # tracing-agent parses fusion logs from stdout
+            # optionally use file-based MCP for deep kernel analysis
             tools.append("tracing-agent (stage=inductor)")
-            tools.append("parse_inductor_output_code (torch-compile-ai)")
             tools.append("inductor-expert")
             
         elif any(w in kw for w in ["fx graph", "aten", "dynamo graph"]):
-            # Only need dynamo stage for FX graph
+            # tracing-agent generates FX graph files
+            # optionally use parse_dynamo_graph for file analysis
             tools.append("tracing-agent (stage=dynamo)")
-            tools.append("parse_dynamo_graph (torch-compile-ai)")
             tools.append("dynamo-expert")
             
         elif any(w in kw for w in ["graph break", "why break", "breaks"]):
-            # Only need dynamo stage for graph breaks
+            # tracing-agent parses graph breaks from stdout
             tools.append("tracing-agent (stage=dynamo)")
-            tools.append("find_graph_breaks (torch-compile-ai)")
             tools.append("dynamo-expert")
             
         elif any(w in kw for w in ["fusion", "fusing", "why not fus"]):
-            # Only need inductor stage for fusion analysis
+            # tracing-agent parses fusion decisions from stdout
             tools.append("tracing-agent (stage=inductor)")
-            tools.append("parse_inductor_output_code (torch-compile-ai)")
             tools.append("inductor-expert")
             
         elif any(w in kw for w in ["aot", "backward", "gradient", "joint graph"]):
@@ -207,10 +223,13 @@ def route(task):
 
 ## Examples
 
-**Generate and analyze (NEW - user provides code):**
+**Generate and analyze (user provides code):**
 User: "Show me the Triton kernel for: def fn(x): return x.relu()"
-→ Suggest: tracing-agent (stage=inductor), parse_inductor_output_code (torch-compile-ai), inductor-expert
-→ Workflow: Generate inductor output only → Parse kernel → Explain
+→ Suggest: tracing-agent (stage=inductor), inductor-expert
+→ Workflow: 
+  - tracing-agent runs code, parses fusion logs from stdout, returns {parsed_logs, debug_dir}
+  - Optional: analyze_triton_codegen(debug_dir/output_code.py) for deep file analysis
+  - inductor-expert explains kernel
 → Synthesize: "Your relu compiles to a single fused Triton kernel..."
 
 **API lookup:**
@@ -235,8 +254,10 @@ User: "Why isn't my reduction fusing? Logs at torch_compile_debug/run_*/"
 
 **Compile and debug (user provides code with issue):**
 User: "Why does this graph break? def fn(x): return x[x.item()]"
-→ Suggest: tracing-agent (stage=dynamo), find_graph_breaks (torch-compile-ai), dynamo-expert
-→ Workflow: Generate dynamo output only → Find breaks → Explain
+→ Suggest: tracing-agent (stage=dynamo), dynamo-expert
+→ Workflow: 
+  - tracing-agent runs code, parses graph breaks from stdout, returns {parsed_logs, debug_dir}
+  - dynamo-expert explains why and how to fix
 → Synthesize: "Graph breaks on tensor.item() because it's data-dependent..."
 
 **Multi-domain:**

@@ -4,9 +4,9 @@ A specialized multi-agent architecture for PyTorch compiler development, combini
 
 ## Status: ✅ Complete
 
-- **Debug Tracer MCP:** 13 parsers, 23 tests passing
+- **torch-compile-ai MCP:** 9 parsers aligned with IR levels, 16 tests passing
 - **Steering MCP:** Indexed (dynamo: 1,208 funcs, inductor: 2,457 funcs)
-- **Multi-Agent Prompts:** Coordinator + 2 specialists (52% size reduction)
+- **Multi-Agent Prompts:** Coordinator + 3 specialists (tracing + 2 experts)
 - **Configuration:** Automated setup script for container environments
 
 ## Quick Start
@@ -30,21 +30,18 @@ cd /workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai
 
 ## What This Provides
 
-### 1. Debug Tracer MCP (13 Parsers)
+### 1. torch-compile-ai MCP (9 Parsers)
 
-Parse torch.compile debug logs across 4 compilation stages:
+Parse torch.compile debug output aligned with IR levels:
 
-**Dynamo Stage (4 parsers)**
-- Guards, graph breaks, graph structure, cache lookup
+**Dynamo Stage (3 parsers)**
+- Graph breaks, FX graphs, pre-grad passes
 
-**AOT Autograd Stage (2 parsers)**
-- Forward/backward graphs
+**AOT Autograd Stage (3 parsers)**
+- Joint graph, partitioned graphs, post-grad passes
 
-**Inductor Stage (4 parsers)**
-- Post-grad graphs, output code, compiled modules, FX graph analysis
-
-**Analysis Tools (3 parsers)**
-- Find graph breaks, find recompiles, analyze guards
+**Inductor Stage (3 parsers)**
+- Fusion decisions, IR post-fusion (LoopBody), output code (Triton/C++)
 
 ### 2. Steering MCP
 
@@ -128,7 +125,7 @@ See `tests/multi-agent/test_scenarios.md` for 5 complete test scenarios.
 torch-compile-ai/
 ├── setup.sh                          # Automated setup (run on container startup)
 ├── server.py                         # MCP server entry point
-├── analyzers/                          # 13 parser implementations
+├── analyzers/                          # 9 parser implementations (3 modules)
 │   ├── dynamo_guards.py
 │   ├── dynamo_graph.py
 │   ├── aot_forward_graph.py
@@ -139,7 +136,7 @@ torch-compile-ai/
 │   ├── dynamo-expert-concise.md      # Dynamo specialist
 │   └── inductor-expert-concise.md    # Inductor specialist
 ├── tests/
-│   ├── analyzers/                      # 23 unit tests
+│   ├── parsers/                        # 16 unit tests (mirrors source)
 │   └── multi-agent/                  # 5 end-to-end scenarios
 └── docs/
     ├── INSTALLATION.md               # Detailed setup guide
@@ -187,10 +184,10 @@ Edit `prompts/*.md` to adjust:
 ## Documentation
 
 - **Installation:** `docs/INSTALLATION.md` - Detailed setup guide
-- **Current Status:** `docs/CURRENT_STATUS.md` - Implementation status
-- **Steering Setup:** `docs/STEERING_SETUP.md` - API indexing guide
+- **Architecture:** `REPO_ARCH.md` - Repository structure and design
+- **Code Guidelines:** `CLAUDE.md` - Code style and testing requirements
+- **Getting Started:** `GETTING_STARTED.md` - Interactive workflow examples
 - **Test Scenarios:** `tests/multi-agent/test_scenarios.md` - 5 end-to-end tests
-- **Development:** `CLAUDE.md` - Code guidelines and architecture
 
 ## Troubleshooting
 
@@ -226,7 +223,7 @@ python -m pytest tests/analyzers/ -v -s
 
 - ✅ **Type hints**: Modern Python 3.10+ annotations
 - ✅ **Google docstrings**: Args/Returns documented
-- ✅ **TDD**: 23 tests, all passing
+- ✅ **TDD**: 16 tests, all passing
 - ✅ **Linted**: ruff + pyright compliant
 
 ## License
