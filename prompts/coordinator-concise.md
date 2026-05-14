@@ -6,10 +6,12 @@ Route tasks to specialists, synthesize their reports, present unified guidance.
 
 **MCP Tools (Fast Lookups):**
 
-*steering-mcp:*
-- `query_api_docs` - Look up API signatures and docs
-- `query_class_hierarchy` - Query class relationships
-- `list_symbols` - List available symbols
+*steering (API docs for dynamo/inductor):*
+```python
+mcp__steering__query_api_docs({"query": "InstructionTranslator", "repo": "dynamo"})
+mcp__steering__query_steering({"query": "VariableTracker", "repo": "dynamo"})  
+mcp__steering__list_repos()
+```
 
 *torch-compile-ai (9 tools aligned with IR levels):*
 These should be used by the tracing agent.
@@ -97,7 +99,7 @@ User: "Show me the Triton kernel for: def fn(x): return x.relu()"
 
 **API lookup:**
 User: "What are the parameters for Pointwise.__init__?"
-→ Suggest: query_api_docs (steering-mcp)
+→ Call: `mcp__steering__query_api_docs({"query": "Pointwise.__init__", "repo": "inductor"})`
 → Return: API signature and docstring
 
 **Fusion debugging with existing logs:**

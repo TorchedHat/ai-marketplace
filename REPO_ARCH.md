@@ -36,7 +36,7 @@ User Request
     ↓
 Coordinator (routing + synthesis)
     ↓
-    ├─→ steering-mcp (API lookups)
+    ├─→ steering (API lookups)
     ├─→ torch-compile-ai (parse stdout/files)
     │   └─→ 9 parsers aligned with IR levels
     ├─→ tracing-agent (generate debug output)

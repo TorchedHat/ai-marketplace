@@ -4,14 +4,19 @@ Dynamo specialist for graph capture, guards, graph breaks, and VariableTracker s
 
 ## Knowledge Base
 
-**Primary reference:** `/workspaces/pytorch-devcontainers/.claude/skills/pytorch-dynamo/`
+**Steering (Fast API lookups):**
+```python
+mcp__steering__query_api_docs({"query": "OptimizerVariable.__init__", "repo": "dynamo"})
+mcp__steering__query_steering({"query": "VariableTracker", "repo": "dynamo"})
+```
+Use for: Quick signatures, when/why/how guidance
 
-Use pytorch-dynamo skill for detailed knowledge on:
-- VariableTracker hierarchy and implementation (VARIABLE-TRACKER.md)
-- Guard system and symbolic shapes (GUARD.md)
-- Graph break causes and fixes (GRAPH-BREAKS.md)
-- Bytecode tracing mechanics
-- Custom type tracking patterns
+**Skills (Deep implementation):**
+`/workspaces/pytorch-devcontainers/.claude/skills/pytorch-dynamo/`
+- VariableTracker hierarchy (VARIABLE-TRACKER.md)
+- Guard system (GUARD.md)
+- Graph breaks (GRAPH-BREAKS.md)
+Use for: Implementation details, patterns, debugging
 
 ## Output Format
 
@@ -43,8 +48,7 @@ Use pytorch-dynamo skill for detailed knowledge on:
 
 **Defer:**
 - Inductor (lowerings, IR, Triton) → inductor-expert
-- Log parsing → torch-compile-ai
-- API signatures → steering-mcp
+- Log parsing → torch-compile-ai MCP tools
 - Stage-specific logging → compile-trace skill
 
 ## Guidelines

@@ -4,19 +4,23 @@ Inductor specialist for lowerings, IR nodes, Triton codegen, and fusion.
 
 ## Knowledge Base
 
-**Primary reference:** `/workspaces/pytorch-devcontainers/.claude/skills/pytorch-inductor/`
+**Steering (Fast API lookups):**
+```python
+mcp__steering__query_api_docs({"query": "Pointwise.__init__", "repo": "inductor"})
+mcp__steering__query_steering({"query": "register_lowering", "repo": "inductor"})
+```
+Use for: Quick signatures, when/why/how guidance
 
-Use pytorch-inductor skill for detailed knowledge on:
-- Lowering registration patterns (LOWERING-REGISTRATION.md)
-- IR node types and selection (IR-NODES.md)
-- Fusion patterns and debugging (FUSION-PATTERNS.md)
+**Skills (Deep implementation):**
+`/workspaces/pytorch-devcontainers/.claude/skills/pytorch-inductor/`
+- Lowering registration (LOWERING-REGISTRATION.md)
+- IR nodes (IR-NODES.md)
+- Fusion patterns (FUSION-PATTERNS.md)
 - Triton codegen (TRITON-CODEGEN.md)
-- Performance optimization strategies
 
-**Secondary reference:** `/workspaces/pytorch-devcontainers/.claude/skills/compile-trace/INDUCTOR-STAGE.md`
-- Stage-specific logging (TORCH_LOGS flags)
-- Debug output file locations
-- Lowering → Scheduler → LoopBody → Codegen flow
+`/workspaces/pytorch-devcontainers/.claude/skills/compile-trace/INDUCTOR-STAGE.md`
+- TORCH_LOGS flags, debug files, stage flow
+Use for: Implementation details, patterns, debugging
 
 ## Output Format
 
@@ -50,8 +54,7 @@ Use pytorch-inductor skill for detailed knowledge on:
 
 **Defer:**
 - Dynamo (VariableTracker, guards) → dynamo-expert
-- Log parsing → torch-compile-ai
-- API signatures → steering-mcp
+- Log parsing → torch-compile-ai MCP tools
 - Debug output generation → tracing-agent
 
 ## Guidelines

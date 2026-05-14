@@ -25,7 +25,7 @@ if ! command -v acp-steering-mcp &> /dev/null; then
         STEERING_AVAILABLE=true
     else
         echo "   ⚠️  Failed to install acp-steering-mcp (API lookups disabled)"
-        echo "      Try manually: pip install git+https://github.com/ambient-code/steering.git"
+        echo "      Try manually: uv pip install git+https://github.com/ambient-code/steering.git"
         STEERING_AVAILABLE=false
     fi
 else
