@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Coordinator Routing Decision",
+  "description": "Schema for coordinator routing decisions",
+  "type": "object",
+  "required": ["type", "user_request", "analysis", "routing_decision"],
+  "properties": {
+    "type": {
+      "const": "routing_decision",
+      "description": "Event type identifier"
+    },
+    "user_request": {
+      "type": "string",
+      "description": "Original user question or request"
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["keywords", "task_type", "compilation_stage"],
+      "properties": {
+        "keywords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Extracted keywords from request"
+        },
+        "task_type": {
+          "type": "string",
+          "enum": [
+            "debug_issue",
+            "api_lookup",
+            "explain_behavior",
+            "performance_analysis",
+            "bisect_failure",
+            "multi_stage_trace"
+          ],
+          "description": "Type of task identified"
+        },
+        "compilation_stage": {
+          "type": ["string", "null"],
+          "enum": ["dynamo", "aot", "inductor", "bisect", "multi_stage", null],
+          "description": "Identified compilation stage or null if unclear"
+        }
+      }
+    },
+    "routing_decision": {
+      "type": "object",
+      "required": ["primary_agent", "reasoning"],
+      "properties": {
+        "primary_agent": {
+          "type": "string",
+          "enum": ["dynamo-expert-agent", "aot-debugger-agent", "inductor-expert-agent", "bisector-agent", "coordinator-direct"],
+          "description": "Agent to handle the request"
+        },
+        "secondary_agents": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Additional agents that may be consulted"
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "Explanation for routing choice"
+        },
+        "mcp_tools_needed": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "MCP tools that will be used"
+        }
+      }
+    }
+  }
+}

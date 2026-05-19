@@ -1,0 +1,35 @@
+name: dynamo-debugger-agent
+version: 1.0.0
+description: Debug PyTorch Dynamo bytecode capture, FX graphs, and graph breaks
+
+# Reference agent definition
+agent_definition: ../../agent-plugins/dynamo-debugger-agent/agents/dynamo-expert.md
+
+# Skills path (bundled from vertical-plugins/)
+skills_path: ../../agent-plugins/dynamo-debugger-agent/skills/
+
+# MCP connectors
+mcp_config: ../../agent-plugins/dynamo-debugger-agent/.mcp.json
+
+# Allowed tool calls (must match agent frontmatter)
+tools:
+  allowed:
+    - Read
+    - mcp__steering__query_api_docs
+    - mcp__steering__query_steering
+  denied:
+    - Write
+    - Bash
+    - Edit
+
+# Agent-to-agent calls
+callable_agents:
+  - coordinator-agent
+  - inductor-expert-agent  # For handoffs when issue spans stages
+
+# Deployment settings
+deployment:
+  max_turns: 5
+  timeout_seconds: 300
+  retry_on_error: true
+  mode: interactive

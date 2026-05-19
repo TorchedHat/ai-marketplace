@@ -2,48 +2,135 @@
 
 ## Overview
 
-MCP server providing 9 parsers for torch.compile debug output across all pipeline stages (Dynamo, AOT Autograd, Inductor).
+Multi-agent development system for PyTorch torch.compile, organized using Anthropic's vertical plugin pattern. Provides MCP tools, stage-specific skills, and structured agent definitions for debugging across all compilation stages (Dynamo, AOT Autograd, Inductor).
 
-**Design Philosophy**: Simple parsers aligned with torch.compile IR levels, supporting both TORCH_LOGS stdout and debug file content.
+**Design Philosophy**: 
+- **Vertical Organization** - Domain-based structure (not type-based)
+- **Agent Formalization** - Structured definitions with JSON schemas
+- **Simple Parsers** - Aligned with torch.compile IR levels
+- **Skill Composition** - Agents bundle relevant skills automatically
 
 ## Project Structure
 
 ```
 torch-compile-ai/
-├── analyzers/                  # 9 parser implementations
-│   ├── __init__.py            # Re-exports all parsers
+├── vertical-plugins/           # Phase 1: Skills organized by compilation stage (source of truth)
+│   ├── dynamo-debugger/
+│   │   ├── skills/            # compile-trace-dynamo, pytorch-dynamo
+│   │   ├── prompts/dynamo-expert.md
+│   │   └── README.md
+│   ├── inductor-debugger/
+│   │   ├── skills/            # compile-trace-inductor, pytorch-inductor
+│   │   ├── prompts/inductor-expert.md
+│   │   └── README.md
+│   ├── aot-debugger/
+│   │   └── skills/compile-trace-aot/
+│   └── bisector/
+│       └── skills/compile-bisect/
+│
+├── agent-plugins/              # Phase 2: Structured agent definitions
+│   ├── coordinator-agent/
+│   │   ├── agents/coordinator.md       # 5-section agent definition
+│   │   └── skills/                     # Synced from coordinator/
+│   ├── dynamo-debugger-agent/
+│   │   ├── agents/dynamo-expert.md
+│   │   └── skills/                     # Synced from vertical-plugins/
+│   ├── inductor-debugger-agent/
+│   │   ├── agents/inductor-expert.md
+│   │   └── skills/
+│   ├── aot-debugger-agent/
+│   │   ├── agents/aot-expert.md
+│   │   └── skills/
+│   └── bisector-agent/
+│       ├── agents/bisector.md
+│       └── skills/
+│
+├── coordinator/                # Coordinator vertical (special case)
+│   ├── skills/compile-overview/
+│   ├── prompts/coordinator.md
+│   └── README.md
+│
+├── managed-agent-cookbooks/    # Phase 2: Deployment manifests
+│   ├── coordinator-agent/agent.yaml
+│   ├── dynamo-debugger-agent/agent.yaml
+│   ├── inductor-debugger-agent/agent.yaml
+│   ├── aot-debugger-agent/agent.yaml
+│   └── bisector-agent/agent.yaml
+│
+├── schemas/                    # Phase 2: Structured output schemas
+│   ├── handoff_request.json
+│   ├── coordinator_routing.json
+│   ├── dynamo_response.json
+│   ├── inductor_response.json
+│   └── aot_response.json
+│
+├── scripts/                    # Phase 2: Automation
+│   ├── sync-agent-skills.py   # Sync skills to agent bundles
+│   └── validate-skills.py     # Lint and validate
+│
+├── analyzers/                  # 9 MCP parser implementations
+│   ├── __init__.py
 │   ├── dynamo_parsers.py      # Dynamo stage (3 parsers)
 │   ├── aot_parsers.py         # AOT stage (3 parsers)
 │   └── inductor_parsers.py    # Inductor stage (3 parsers)
+│
 ├── server.py                   # MCP server entry point
-├── tests/analyzers/              # Parser unit tests
-│   ├── test_dynamo_parsers.py
-│   └── test_inductor_parsers.py
-├── prompts/                    # Multi-agent prompts
-│   ├── coordinator-concise.md
-│   ├── tracing-agent-concise.md
-│   ├── dynamo-expert-concise.md
-│   └── inductor-expert-concise.md
-└── docs/                       # User documentation
+├── tests/                      # Tests
+│   ├── analyzers/             # Parser unit tests
+│   └── multi-agent/           # Multi-agent test scenarios
+└── examples/                   # Example usage
 ```
 
 ## Architecture
+
+### Vertical Plugin Organization (Phase 1)
+
+Skills are organized by **compilation stage** rather than file type:
+
+**Benefits:**
+- Each compilation stage's components grouped together
+- Clear boundaries between Dynamo, AOT, Inductor concerns
+- Easy to see what belongs to each stage
+- Skills synced to agent bundles via automation
+
+**Source of Truth:** `vertical-plugins/` and `coordinator/`  
+**Agent Bundles:** `agent-plugins/*/skills/` (auto-synced)  
+**Backward Compatibility:** `.claude/skills/` symlinks to vertical-plugins
+
+### Agent Formalization (Phase 2)
+
+Structured agent definitions following Anthropic's 5-section pattern:
+
+1. **Frontmatter** - Metadata, tools, callable_agents
+2. **Identity** - Persona, scope boundaries
+3. **Deliverables** - Structured JSON output
+4. **Workflow** - Step-by-step process
+5. **Guardrails** - NEVER/ALWAYS constraints
+
+**Agent-to-Agent Communication:**
+- `handoff_request.json` - Task routing between agents
+- Stage-specific response schemas (dynamo, inductor, aot)
+- `coordinator_routing.json` - Routing decisions
 
 ### Execution Flow
 
 ```
 User Request
     ↓
-Coordinator (routing + synthesis)
+Coordinator Agent (compile-overview skill)
+    ├─ Analyzes task and suggests routing
+    ├─ Confirms delegation with user
+    └─ Routes to specialists
     ↓
-    ├─→ steering (API lookups)
+    ├─→ steering-mcp (API lookups)
     ├─→ torch-compile-ai (parse stdout/files)
     │   └─→ 9 parsers aligned with IR levels
-    ├─→ tracing-agent (generate debug output)
-    ├─→ dynamo-expert (Dynamo analysis)
-    └─→ inductor-expert (Inductor analysis)
+    ├─→ bisector-agent (automated failure isolation)
+    ├─→ dynamo-debugger-agent (Dynamo analysis)
+    ├─→ inductor-debugger-agent (Inductor analysis)
+    └─→ aot-debugger-agent (AOT Autograd analysis)
     ↓
-Synthesized Response
+Synthesized Response (structured JSON)
 ```
 
 ### 9 MCP Tools (Aligned with IR Levels)
@@ -199,6 +286,43 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
+## Deployment Manifests
+
+### Agent Manifests (Phase 2)
+
+Each agent has an `agent.yaml` manifest in `managed-agent-cookbooks/`:
+
+**Structure:**
+```yaml
+agent:
+  definition: "../agent-plugins/<name>/agents/<name>.md"
+  skills_path: "../agent-plugins/<name>/skills/"
+  mcp_config:
+    servers: [...]
+  tools:
+    allow: [...]
+    deny: [...]
+  callable_agents: [...]
+  deployment:
+    max_turns: 20
+    timeout: 300
+    mode: "interactive"
+```
+
+**Future:** Ready for headless deployment via Anthropic Managed Agents API
+
+### JSON Schemas
+
+Structured communication between agents:
+
+- `handoff_request.json` - Agent-to-agent task handoff
+- `coordinator_routing.json` - Coordinator routing decisions
+- `dynamo_response.json` - Dynamo expert output format
+- `inductor_response.json` - Inductor expert output format
+- `aot_response.json` - AOT debugger output format
+
+All schemas validated with `python -m json.tool`
+
 ## Installation
 
 ### Container Environment
@@ -217,6 +341,7 @@ The `setup.sh` script:
 - Installs pip packages (fast, ~30s)
 - Stores indices in `/workspaces/ai-tooling/.acp-indices/` (persists)
 - Recreates `~/.claude/settings.json` on each startup
+- Skills auto-discoverable via Claude Code skill system
 
 ### Manual Installation
 
@@ -255,32 +380,171 @@ pytest tests/analyzers/test_inductor_parsers.py::TestParseOutputCode::test_trito
 
 ## Multi-Agent System
 
-### Coordinator
-Routes tasks to specialists, synthesizes results, presents unified guidance.
+### Coordinator Agent
+**Location:** `agent-plugins/coordinator-agent/`  
+**Skills:** compile-overview  
+**Role:** Routes tasks to specialists, synthesizes results, presents unified guidance
 
-### Specialists
-- **tracing-agent**: Generate debug output, parse stdout/files, return structured findings
-- **dynamo-expert**: VariableTracker, guards, graph breaks
-- **inductor-expert**: Lowerings, IR nodes, Triton, fusion
+**Capabilities:**
+- Task analysis and routing
+- User confirmation workflow
+- Multi-specialist coordination
+- Structured JSON output
+
+### Specialist Agents
+
+**Dynamo Debugger Agent**  
+**Location:** `agent-plugins/dynamo-debugger-agent/`  
+**Skills:** pytorch-dynamo, compile-trace-dynamo  
+**Specialization:** VariableTracker system, bytecode tracing, guard generation, graph breaks
+
+**Inductor Debugger Agent**  
+**Location:** `agent-plugins/inductor-debugger-agent/`  
+**Skills:** pytorch-inductor, compile-trace-inductor  
+**Specialization:** Lowering registration, IR nodes, Triton codegen, fusion patterns
+
+**AOT Debugger Agent**  
+**Location:** `agent-plugins/aot-debugger-agent/`  
+**Skills:** compile-trace-aot  
+**Specialization:** Functionalization, decompositions, joint graphs, partitioning
+
+**Bisector Agent**  
+**Location:** `agent-plugins/bisector-agent/`  
+**Skills:** compile-bisect  
+**Specialization:** Automated failure isolation, backend/subsystem binary search
 
 ### MCP Servers
 - **torch-compile-ai**: 9 parsers (this repository)
 - **steering-mcp**: API documentation and code navigation
 
-## Performance
+### Tool Allowlists
+
+**Coordinator:** Read, Bash, MCP tools (steering + debug-tracer)  
+**Experts** (dynamo, inductor, aot): Read, MCP steering only (no Write/Edit)  
+**Bisector:** Read, Bash (needs to run bisector command)
+
+## Skill Sync & Validation
+
+### Sync Script
+`scripts/sync-agent-skills.py` syncs skills from vertical-plugins/ to agent-plugins/
+
+**Mappings:**
+```python
+{
+    "coordinator-agent": ["compile-overview"],
+    "dynamo-debugger-agent": ["pytorch-dynamo", "compile-trace-dynamo"],
+    "inductor-debugger-agent": ["pytorch-inductor", "compile-trace-inductor"],
+    "aot-debugger-agent": ["compile-trace-aot"],
+    "bisector-agent": ["compile-bisect"],
+}
+```
+
+**Usage:**
+```bash
+python scripts/sync-agent-skills.py
+```
+
+### Validation Script
+`scripts/validate-skills.py` validates YAML frontmatter, cross-references, and circular dependencies
+
+**Usage:**
+```bash
+python scripts/validate-skills.py
+```
+
+## Benefits
 
 ### Context Efficiency
-- MCP-only query: ~10KB (87% reduction vs all skills)
-- Single specialist: ~60KB (60% reduction)
-- Multi-specialist: ~110KB (27% reduction)
+- Vertical organization reduces context size by loading only relevant skills
+- Coordinator loads minimal routing logic without domain skills
+- Specialists load only their domain-specific knowledge
+- Agents can run in parallel when tasks are independent
 
-### Query Latency
-- Parsing: <1s for stdout, 1-3s for large files
-- Specialist analysis: 5-10s
+### Design Philosophy
+- Simple, focused parsers aligned with IR levels
+- Agents have clear responsibility boundaries
+- Skills are composable and reusable
+- Automation reduces manual sync burden
+
+## Development Workflow
+
+### Skill Development
+
+1. **Edit source skills** in `vertical-plugins/` or `coordinator/`
+2. **Run sync script** to update agent bundles:
+   ```bash
+   python scripts/sync-agent-skills.py
+   ```
+3. **Validate** frontmatter and cross-references:
+   ```bash
+   python scripts/validate-skills.py
+   ```
+
+### Agent Development
+
+1. **Edit agent definitions** in `agent-plugins/*/agents/`
+2. **Update schemas** in `schemas/` if changing output format
+3. **Validate schemas**:
+   ```bash
+   python -m json.tool schemas/<schema>.json
+   ```
+
+### Parser Development
+
+1. **Write test** in `tests/analyzers/`
+2. **Implement parser** in `analyzers/`
+3. **Run tests**:
+   ```bash
+   pytest tests/analyzers/ -v
+   ```
+
+## Reorganization History
+
+### Phase 1: Vertical Organization (Complete ✅)
+**Date:** 2026-05-19  
+**Goal:** Reorganize from horizontal (type-based) to vertical (domain-based)
+
+**Changes:**
+- Created `vertical-plugins/` with stage-specific directories
+- Moved skills from `.claude/skills/` to verticals
+- Created symlinks in `.claude/skills/` for backward compatibility
+- Added README.md to each vertical explaining purpose
+
+**See:** `/workspaces/pytorch-devcontainers/specs/agentic-workflow/REORGANIZATION-SUMMARY.md`
+
+### Phase 2: Agent Formalization (Complete ✅)
+**Date:** 2026-05-19  
+**Goal:** Add structured agent definitions and automation
+
+**Phase 2A - Manifests & Schemas:**
+- Created `agent-plugins/` with 5-section agent definitions
+- Created `managed-agent-cookbooks/` with agent.yaml manifests
+- Created `schemas/` with JSON schemas for structured output
+- Added tool allowlists and callable_agents
+
+**Phase 2B - Automation:**
+- Created `scripts/sync-agent-skills.py` for skill syncing
+- Created `scripts/validate-skills.py` for validation
+- All 6 skills synced to agent bundles
+- All schemas validated
+
+**See:** `/workspaces/pytorch-devcontainers/specs/agentic-workflow/PHASE2-IMPLEMENTATION-SUMMARY.md`
+
+### Phase 3: Future Enhancements (Deferred ⏸️)
+
+**Not Implemented:**
+- Orchestration layer (scripts/orchestrate.py)
+- Headless deployment to Claude API
+- Advanced skill composition
+- User-teachable workflows
+- Performance telemetry
+
+**See:** `/workspaces/pytorch-devcontainers/specs/agentic-workflow/phase-3-plan.md`
 
 ## Code Quality
 
 - ✅ **Type hints**: Modern Python 3.10+ annotations
 - ✅ **Google docstrings**: Args/Returns documented
-- ✅ **TDD**: 8 tests, all passing
+- ✅ **TDD**: Parser tests with realistic torch.compile output
 - ✅ **Linted**: ruff + pyright compliant
+- ✅ **Validated**: All skill frontmatter and schemas validated

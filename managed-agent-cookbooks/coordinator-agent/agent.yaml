@@ -1,0 +1,38 @@
+name: coordinator-agent
+version: 1.0.0
+description: Orchestrates torch.compile debugging by routing tasks to specialized agents
+
+# Reference agent definition
+agent_definition: ../../agent-plugins/coordinator-agent/agents/coordinator.md
+
+# Skills path (bundled from vertical-plugins/)
+skills_path: ../../agent-plugins/coordinator-agent/skills/
+
+# MCP connectors
+mcp_config: ../../agent-plugins/coordinator-agent/.mcp.json
+
+# Allowed tool calls (must match agent frontmatter)
+tools:
+  allowed:
+    - Read
+    - Bash
+    - mcp__steering__query_api_docs
+    - mcp__steering__query_steering
+    - mcp__debug_tracer__*
+  denied:
+    - Write
+    - Edit
+
+# Agent-to-agent calls
+callable_agents:
+  - dynamo-expert-agent
+  - inductor-expert-agent
+  - aot-debugger-agent
+  - bisector-agent
+
+# Deployment settings (for future headless deployment)
+deployment:
+  max_turns: 10
+  timeout_seconds: 600
+  retry_on_error: true
+  mode: interactive  # interactive or headless
