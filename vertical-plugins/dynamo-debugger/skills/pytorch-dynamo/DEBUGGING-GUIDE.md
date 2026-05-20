@@ -2,6 +2,41 @@
 
 Systematic approach to debugging PyTorch Dynamo issues.
 
+> **When to use this guide**: You're implementing or fixing Dynamo code (VariableTracker, bytecode conversion, reconstruction).
+>
+> **For user-level tracing** (TORCH_LOGS, FX graphs, graph breaks): See [compile-trace-dynamo skill](../../compile-trace-dynamo/SKILL.md)
+
+## Table of Contents
+
+1. [When to Graph Break vs Fix](#when-to-graph-break-vs-fix)
+2. [Quick Start](#quick-start)
+3. [Minimal Reproduction](#minimal-reproduction)
+4. [Enable Debug Logging](#enable-debug-logging)
+5. [4-Category Debugging Workflow](#4-category-debugging-workflow)
+   - [Bytecode Capture Incorrect](#1-bytecode-capture-incorrect)
+   - [Object → Variable Conversion](#2-object--variable-conversion-incorrect)
+   - [Variable Implementation](#3-variable-implementation-incorrect)
+   - [Output Bytecode Incorrect](#4-output-bytecode-incorrect)
+6. [Guard Failures](#guard-failures)
+7. [Common Error Patterns](#common-error-patterns)
+8. [Step-by-Step Debug Session](#step-by-step-debug-session)
+9. [Useful Debug Commands](#useful-debug-commands)
+10. [Testing Your Fix](#testing-your-fix)
+11. [Getting More Help](#getting-more-help)
+12. [Pro Tips](#pro-tips)
+
+## When to Graph Break vs Fix
+
+**Graph break is acceptable when**:
+- Feature is rarely used
+- Implementation is very complex
+- Dynamic behavior is inherent
+
+**Implement support when**:
+- Feature is commonly used
+- Performance matters
+- Implementation is straightforward
+
 ## Quick Start
 
 **Have a compilation error?**
@@ -166,29 +201,6 @@ os.environ['TORCHDYNAMO_REPORT_GUARD_FAILURES'] = '1'
 - Use `torch._dynamo.config.assume_static_by_default = False` for dynamic shapes
 - Accept graph breaks for dynamic behavior
 
-## Graph Breaks
-
-**Symptom**: Performance not as expected, multiple compilations
-
-**Debug**:
-```bash
-TORCH_COMPILE_DEBUG=1 python script.py
-```
-
-**Check output for**:
-- Where graph breaks occur
-- Why (unsupported operation, data-dependent flow, etc.)
-
-**Common causes**:
-- Unsupported Python features (e.g., `eval()`, `exec()`)
-- Data-dependent control flow
-- Unimplemented operations
-
-**Solutions**:
-- Rewrite code to avoid unsupported features
-- Use `torch.cond()` for conditional execution
-- Implement support for the operation
-
 ## Common Error Patterns
 
 ### "Graph break" on simple operation
@@ -325,18 +337,6 @@ python test/dynamo/test_misc.py -v
 # Run all dynamo tests (slower)
 pytest test/dynamo/ -v
 ```
-
-## When to Graph Break vs Fix
-
-**Graph break is acceptable when**:
-- Feature is rarely used
-- Implementation is very complex
-- Dynamic behavior is inherent
-
-**Implement support when**:
-- Feature is commonly used
-- Performance matters
-- Implementation is straightforward
 
 ## Getting More Help
 

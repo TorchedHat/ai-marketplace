@@ -77,6 +77,15 @@ if [ "$STEERING_AVAILABLE" = true ]; then
     else
         echo "   ✓ Inductor index exists"
     fi
+
+    if [ ! -f "$INDICES/functorch/steering.json" ]; then
+        echo "🔍 Indexing torch._functorch (this takes ~3-5 minutes)..."
+        cd "$PYTORCH_SRC"
+        repomap ./torch/_functorch --repo-name functorch --verbose > /dev/null 2>&1
+        echo "   ✓ Functorch indexed: $(cat "$INDICES/functorch/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*') functions"
+    else
+        echo "   ✓ Functorch index exists"
+    fi
 else
     echo "   ⏭️  Skipping PyTorch indexing (steering not available)"
 fi
@@ -148,6 +157,7 @@ fi
 # Check indices
 DYNAMO_FUNCS=$(cat "$INDICES/dynamo/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*')
 INDUCTOR_FUNCS=$(cat "$INDICES/inductor/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*')
+FUNCTORCH_FUNCS=$(cat "$INDICES/functorch/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*')
 
 echo "   ✓ Python: $(which python)"
 echo "   ✓ acp-steering-mcp: $(which acp-steering-mcp)"
@@ -155,6 +165,7 @@ echo "   ✓ repomap: $(which repomap)"
 echo "   ✓ pre-commit: $(which pre-commit 2>/dev/null || echo 'not installed')"
 echo "   ✓ Dynamo index: $DYNAMO_FUNCS functions"
 echo "   ✓ Inductor index: $INDUCTOR_FUNCS functions"
+echo "   ✓ Functorch index: $FUNCTORCH_FUNCS functions"
 echo "   ✓ Claude settings: $SETTINGS"
 echo "   ✓ MCP servers: $WORKSPACES/.mcp.json"
 echo "   ✓ Skills: $(ls -1 $CLAUDE_SKILLS | wc -l) symlinks created"
@@ -177,7 +188,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "📊 Summary:"
 echo "   • MCP Servers: debug-tracer, steering (in .mcp.json)"
-echo "   • Indices: dynamo ($DYNAMO_FUNCS funcs), inductor ($INDUCTOR_FUNCS funcs)"
+echo "   • Indices: dynamo ($DYNAMO_FUNCS funcs), inductor ($INDUCTOR_FUNCS funcs), functorch ($FUNCTORCH_FUNCS funcs)"
 echo "   • Settings: $SETTINGS"
 echo "   • Skills: 7 torch.compile debugging skills linked"
 echo "   • Pre-commit: Ruff linter/formatter + pytest hooks enabled"
