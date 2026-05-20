@@ -61,7 +61,7 @@ mkdir -p "$INDICES"
 # 3. Index PyTorch modules (if steering is available and not already indexed)
 if [ "$STEERING_AVAILABLE" = true ]; then
     if [ ! -f "$INDICES/dynamo/steering.json" ]; then
-        echo "🔍 Indexing torch._dynamo (this takes ~2-3 minutes)..."
+        echo "🔍 Indexing torch._dynamo..."
         cd "$PYTORCH_SRC"
         repomap ./torch/_dynamo --repo-name dynamo --verbose > /dev/null 2>&1
         echo "   ✓ Dynamo indexed: $(cat "$INDICES/dynamo/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*') functions"
@@ -70,7 +70,7 @@ if [ "$STEERING_AVAILABLE" = true ]; then
     fi
 
     if [ ! -f "$INDICES/inductor/steering.json" ]; then
-        echo "🔍 Indexing torch._inductor (this takes ~5-8 minutes)..."
+        echo "🔍 Indexing torch._inductor..."
         cd "$PYTORCH_SRC"
         repomap ./torch/_inductor --repo-name inductor --verbose > /dev/null 2>&1
         echo "   ✓ Inductor indexed: $(cat "$INDICES/inductor/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*') functions"
@@ -79,7 +79,7 @@ if [ "$STEERING_AVAILABLE" = true ]; then
     fi
 
     if [ ! -f "$INDICES/functorch/steering.json" ]; then
-        echo "🔍 Indexing torch._functorch (this takes ~3-5 minutes)..."
+        echo "🔍 Indexing torch._functorch..."
         cd "$PYTORCH_SRC"
         repomap ./torch/_functorch --repo-name functorch --verbose > /dev/null 2>&1
         echo "   ✓ Functorch indexed: $(cat "$INDICES/functorch/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*') functions"
