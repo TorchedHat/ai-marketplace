@@ -94,8 +94,19 @@ EOF
 echo "   ✓ Settings written to $SETTINGS"
 echo "   ℹ️  MCP servers configured in .mcp.json (project-local)"
 
-# 5. Create skill symlinks
-echo "🔗 Creating skill symlinks..."
+# 5. Create symlinks
+echo "🔗 Creating symlinks..."
+
+# 5a. Symlink .mcp.json to project root
+if [ -f "$AI_TOOLING/.mcp.json" ]; then
+    rm -f "$WORKSPACES/.mcp.json"
+    ln -s "$AI_TOOLING/.mcp.json" "$WORKSPACES/.mcp.json"
+    echo "   ✓ Linked .mcp.json to project root"
+else
+    echo "   ⚠️  $AI_TOOLING/.mcp.json not found"
+fi
+
+# 5b. Symlink skills
 CLAUDE_SKILLS="$WORKSPACES/.claude/skills"
 mkdir -p "$CLAUDE_SKILLS"
 
@@ -118,9 +129,9 @@ for skill_dir in "$AI_TOOLING"/vertical-plugins/*/skills/* "$AI_TOOLING"/coordin
     fi
 done
 
-echo "   ✓ Created $SKILL_COUNT skill symlinks in $CLAUDE_SKILLS"
+echo "   ✓ Created $SKILL_COUNT skill symlinks"
 
-# 7. Verify setup
+# 6. Verify setup
 echo "✅ Verifying setup..."
 
 # Check Python packages
@@ -138,6 +149,7 @@ fi
 DYNAMO_FUNCS=$(cat "$INDICES/dynamo/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*')
 INDUCTOR_FUNCS=$(cat "$INDICES/inductor/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*')
 
+echo "   ✓ Python: $(which python)"
 echo "   ✓ acp-steering-mcp: $(which acp-steering-mcp)"
 echo "   ✓ repomap: $(which repomap)"
 echo "   ✓ pre-commit: $(which pre-commit 2>/dev/null || echo 'not installed')"
@@ -147,15 +159,15 @@ echo "   ✓ Claude settings: $SETTINGS"
 echo "   ✓ MCP servers: $WORKSPACES/.mcp.json"
 echo "   ✓ Skills: $(ls -1 $CLAUDE_SKILLS | wc -l) symlinks created"
 
-# 8. Test MCP servers
+# 7. Test MCP servers
 echo "🧪 Testing MCP servers..."
 
-# Test torch-compile-ai server
-if python "$AI_TOOLING/server.py" <<< '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}
-{"jsonrpc":"2.0","method":"tools/list","id":2}' 2>/dev/null | grep -q "parse_graph_breaks"; then
-    echo "   ✓ torch-compile-ai responding"
+# Test torch-compile-ai server (import test - MCP servers are designed for long-running sessions)
+if python -c "from analyzers import dynamo_parsers, aot_parsers, inductor_parsers" 2>/dev/null; then
+    echo "   ✓ torch-compile-ai server validated"
 else
-    echo "   ⚠️  torch-compile-ai not responding (might be expected in non-interactive mode)"
+    echo "   ❌ torch-compile-ai server imports failed"
+    exit 1
 fi
 
 echo ""
