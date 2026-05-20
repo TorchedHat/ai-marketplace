@@ -5,14 +5,15 @@ Anthropic-pattern multi-agent debugging system for PyTorch compiler development.
 **Architecture:**
 - **Vertical Plugins** - Skills organized by compilation stage (Dynamo, AOT, Inductor)
 - **Agent Plugins** - Structured agents with manifests (coordinator, experts, bisector)
-- **MCP Servers** - 9 parsers for debug output + API documentation
+- **MCP Servers** - Debug output parsers + steering (PyTorch API documentation)
 - **Skill Sync** - Automated sync from vertical sources to agent bundles
 
 **Features:**
-- 🔍 **Intelligent Routing** - Coordinator delegates to stage-specific experts
-- 📋 **Structured Output** - JSON schemas for agent responses
-- 🔄 **Skill Composition** - Agents bundle relevant skills automatically
+- 🔍 **Intelligent Routing** - Bisect-first workflow routes to stage-specific skills
+- 📚 **Steering Integration** - Semantic search over PyTorch Dynamo/Inductor APIs
+- 🔄 **Skill Composition** - Implementation + tracing skills per stage
 - 🛠️ **Bisector Integration** - Automated failure isolation
+- 📋 **Debug Parsers** - 9 MCP tools for parsing TORCH_LOGS output
 
 ## Quick Start
 
@@ -26,12 +27,10 @@ cd /workspaces/pytorch-devcontainers/torch-compile-ai
 #   "Debug this graph break: def fn(x): return x[x.item()]"
 #   "Why isn't my reduction fusing?"
 #   "Show me the Triton kernel for: def fn(x): return x.relu()"
+#   "How do I implement a new VariableTracker?"
 ```
 
-**First run:** ~10-15 minutes (includes PyTorch indexing)
-**Subsequent:** ~30 seconds
-
-**Note**: Skills are always discoverable through the Claude Code skill system. No need to load prompts manually - the system routes automatically.
+**Note**: Skills are discoverable through the Claude Code skill system. Setup includes PyTorch API indexing for steering-based semantic search.
 
 ## Installation
 
@@ -41,8 +40,10 @@ cd /workspaces/pytorch-devcontainers/torch-compile-ai
 
 This script:
 - Installs pip packages (`acp-steering-mcp`, `torch-compile-ai`)
-- Indexes PyTorch (dynamo + inductor) on first run
-- Configures MCP servers in `~/.claude/settings.json`
+- **Indexes PyTorch** (dynamo + inductor) for steering API documentation
+- Configures MCP servers in `~/.claude/settings.json`:
+  - `debug-tracer` - 9 parsers for TORCH_LOGS output
+  - `steering` - Semantic search over PyTorch APIs
 
 ## Usage
 
@@ -51,33 +52,46 @@ This script:
 All skills are **auto-discoverable** via Claude Code's skill system. Use slash commands or ask natural questions:
 
 ```bash
-# Slash commands
-/compile-overview         # Pipeline overview
+# Meta-skills (workflow guidance)
+/compile-overview         # Pipeline overview & bisect-first workflow
 /compile-bisect          # Automated failure isolation
-/pytorch-dynamo          # Dynamo implementation knowledge
-/pytorch-inductor        # Inductor implementation knowledge
 
-# Or just ask naturally - skills load automatically
-"Why does len() cause a graph break?"
-"Show me the fusion decisions for this model"
-"How do I trace through AOT Autograd?"
+# Tracing skills (user-level debugging)
+/compile-trace-dynamo    # Debug Dynamo: graph breaks, FX graphs, TORCH_LOGS
+/compile-trace-aot       # Debug AOT: functionalization, decompositions, partitioning
+/compile-trace-inductor  # Debug Inductor: fusion, scheduling, codegen
+
+# Implementation skills (PyTorch contributors)
+/pytorch-dynamo          # Dynamo internals: VariableTracker, guards, C++ runtime
+/pytorch-aot             # AOT/Functorch internals: vmap, functionalization, partitioning
+/pytorch-inductor        # Inductor internals: lowerings, scheduling, Triton codegen
+
+# Or just ask naturally - skills load automatically based on context
 ```
 
 ### Example Queries
 
-**Debug graph break:**
+**User-level debugging (uses tracing skills):**
 ```
 Why does this graph break? def fn(x): return x[x.item()]
+Show me the fusion decisions for this model
+Parse these TORCH_LOGS and explain what happened
 ```
 
-**API lookup:**
+**API lookup (uses steering MCP):**
 ```
 What are the parameters for Pointwise.__init__?
+How do I use SymInt in C++ code?
+Show me the signature for torch._dynamo.variables.VariableTracker.call_method
 ```
 
-**Performance:**
+**Implementation work (uses pytorch-* skills):**
 ```
-Parse fusion logs and explain why ops aren't fusing
+How do I implement a new VariableTracker type?
+How do I add functionalization support for my op?
+Where do I add a lowering for my custom op?
+Explain the C++ guard evaluation tree
+Show me how vmap batching works internally
 ```
 
 See `tests/multi-agent/test_scenarios.md` for complete examples.
@@ -88,15 +102,26 @@ See `tests/multi-agent/test_scenarios.md` for complete examples.
 torch-compile-ai/
 ├── vertical-plugins/              # Skills organized by stage (source of truth)
 │   ├── dynamo-debugger/
-│   │   ├── skills/compile-trace-dynamo/, pytorch-dynamo/
+│   │   ├── skills/
+│   │   │   ├── compile-trace-dynamo/  # User-level: TORCH_LOGS, graph breaks, FX graphs
+│   │   │   └── pytorch-dynamo/        # Implementation: VariableTracker, guards, C++ runtime
 │   │   ├── prompts/dynamo-expert.md
 │   │   └── README.md
+│   ├── aot-debugger/
+│   │   ├── skills/
+│   │   │   ├── compile-trace-aot/     # User-level: functionalization, partitioning, TORCH_LOGS
+│   │   │   └── pytorch-aot/           # Implementation: vmap, functorch, AOT internals
+│   │   ├── prompts/aot-expert.md
+│   │   └── README.md
 │   ├── inductor-debugger/
-│   │   ├── skills/compile-trace-inductor/, pytorch-inductor/
+│   │   ├── skills/
+│   │   │   ├── compile-trace-inductor/  # User-level: fusion, scheduling, kernels
+│   │   │   └── pytorch-inductor/        # Implementation: lowerings, scheduler, Triton
 │   │   ├── prompts/inductor-expert.md
 │   │   └── README.md
-│   ├── aot-debugger/skills/compile-trace-aot/
-│   └── bisector/skills/compile-bisect/
+│   └── bisector/skills/compile-bisect/         # Failure isolation
+│
+├── coordinator/skills/compile-overview/  # Bisect-first workflow & pipeline overview
 │
 ├── agent-plugins/                 # Agent definitions (Phase 2)
 │   ├── coordinator-agent/
@@ -114,12 +139,55 @@ torch-compile-ai/
 │   ├── sync-agent-skills.py       # Sync skills to agent bundles
 │   └── validate-skills.py         # Lint and validate
 │
-├── analyzers/                     # 9 MCP parsers (Python)
-├── server.py                      # MCP server entry point
+├── analyzers/                     # 9 MCP debug parsers (Python)
+├── server.py                      # MCP server: debug-tracer + steering
 └── tests/                         # pytest tests
 ```
 
+**Skill Organization:**
+- **Tracing skills** (`compile-trace-*`): User-level debugging, TORCH_LOGS interpretation
+- **Implementation skills** (`pytorch-*`): Contributor-level, internals and architecture
+- **Meta skills** (`compile-overview`, `compile-bisect`): Workflow guidance
+
 See **[REPO_ARCH.md](REPO_ARCH.md)** for detailed architecture.
+
+## MCP Servers
+
+### Debug Tracer (9 Parsers)
+
+Parses TORCH_LOGS output and debug artifacts:
+
+| Parser | Input | Output |
+|--------|-------|--------|
+| `parse_fx_graph` | `fx_graph_readable.py` | FX graph structure |
+| `parse_graph_breaks` | `TORCH_LOGS=graph_breaks` stdout | Break locations & reasons |
+| `parse_aot_joint_graph` | AOT joint graph file | Forward+backward graph |
+| `parse_aot_graphs` | AOT forward/backward files | Partitioned graphs |
+| `parse_post_grad_passes` | `TORCH_LOGS=post_grad_graphs` | Post-grad transformations |
+| `parse_fusion_decisions` | `TORCH_LOGS=fusion,schedule` | Fusion decisions |
+| `parse_ir_post_fusion` | `ir_post_fusion_*.txt` | LoopBody IR |
+| `parse_output_code` | `output_code.py` | Generated kernels |
+
+### Steering (Semantic API Search)
+
+Indexes PyTorch Dynamo and Inductor modules for semantic API documentation:
+
+**Query steering guidance:**
+```
+How do I handle pytree operations in VariableTracker?
+```
+
+**Query API docs:**
+```
+What's the signature for torch._inductor.ir.Pointwise.__init__?
+```
+
+**Indexed modules:**
+- `torch/_dynamo/` - Dynamo internals (bytecode capture, VariableTracker, guards)
+- `torch/_functorch/` - Functorch/AOT internals (vmap, functionalization, partitioning)
+- `torch/_inductor/` - Inductor internals (lowerings, fusion, codegen)
+
+Steering provides context about when/how to use APIs, common patterns, and architectural guidance.
 
 ## Development
 
@@ -158,18 +226,34 @@ Edit `vertical-plugins/*/skills/*/` source files, then run sync script
 **MCP server not starting:**
 ```bash
 python server.py  # Test manually
-cat ~/.claude/settings.json  # Verify config
+cat ~/.claude/settings.json  # Verify MCP config includes debug-tracer and steering
 ```
 
 **Steering returns no results:**
 ```bash
-ls /workspaces/pytorch-devcontainers/ai-tooling/.acp-indices/  # Check indices
-./setup.sh  # Re-run setup
+# Check if indices exist
+ls ~/.acp-indices/pytorch-*/
+
+# Re-index PyTorch
+./setup.sh
 ```
 
-**Tests failing:**
+**Debug parsers returning errors:**
 ```bash
+# Test individual parser
+python -c "from analyzers.dynamo_parsers import parse_graph_breaks; print(parse_graph_breaks('test'))"
+
+# Run parser tests
 pytest tests/analyzers/ -v -s
+```
+
+**Skills not loading:**
+```bash
+# Verify skills are linked correctly
+ls -la /workspaces/pytorch-devcontainers/.claude/skills/
+
+# Check skill rules
+cat /workspaces/pytorch-devcontainers/.claude/skills/skill-rules.json
 ```
 
 ## License
