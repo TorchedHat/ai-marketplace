@@ -99,25 +99,26 @@ echo "🔗 Creating skill symlinks..."
 CLAUDE_SKILLS="$WORKSPACES/.claude/skills"
 mkdir -p "$CLAUDE_SKILLS"
 
-# Remove old symlinks if they exist
-rm -f "$CLAUDE_SKILLS/compile-bisect"
-rm -f "$CLAUDE_SKILLS/compile-overview"
-rm -f "$CLAUDE_SKILLS/compile-trace-aot"
-rm -f "$CLAUDE_SKILLS/compile-trace-dynamo"
-rm -f "$CLAUDE_SKILLS/compile-trace-inductor"
-rm -f "$CLAUDE_SKILLS/pytorch-dynamo"
-rm -f "$CLAUDE_SKILLS/pytorch-inductor"
+# Remove old AI tooling symlinks (keep skill-developer and other non-AI skills)
+find "$CLAUDE_SKILLS" -type l | while read link; do
+    target=$(readlink "$link")
+    if [[ "$target" == *"torch-compile-ai"* ]] || [[ "$target" == *"ai-tooling"* ]]; then
+        rm -f "$link"
+    fi
+done
 
-# Create new symlinks
-ln -s "$AI_TOOLING/vertical-plugins/bisector/skills/compile-bisect" "$CLAUDE_SKILLS/compile-bisect"
-ln -s "$AI_TOOLING/coordinator/skills/compile-overview" "$CLAUDE_SKILLS/compile-overview"
-ln -s "$AI_TOOLING/vertical-plugins/aot-debugger/skills/compile-trace-aot" "$CLAUDE_SKILLS/compile-trace-aot"
-ln -s "$AI_TOOLING/vertical-plugins/dynamo-debugger/skills/compile-trace-dynamo" "$CLAUDE_SKILLS/compile-trace-dynamo"
-ln -s "$AI_TOOLING/vertical-plugins/inductor-debugger/skills/compile-trace-inductor" "$CLAUDE_SKILLS/compile-trace-inductor"
-ln -s "$AI_TOOLING/vertical-plugins/dynamo-debugger/skills/pytorch-dynamo" "$CLAUDE_SKILLS/pytorch-dynamo"
-ln -s "$AI_TOOLING/vertical-plugins/inductor-debugger/skills/pytorch-inductor" "$CLAUDE_SKILLS/pytorch-inductor"
+# Discover and symlink all skills from vertical-plugins and coordinator
+SKILL_COUNT=0
+for skill_dir in "$AI_TOOLING"/vertical-plugins/*/skills/* "$AI_TOOLING"/coordinator/skills/*; do
+    if [ -d "$skill_dir" ] && ([ -f "$skill_dir/SKILL.md" ] || [ -f "$skill_dir/SKILL.yaml" ]); then
+        skill_name=$(basename "$skill_dir")
+        ln -s "$skill_dir" "$CLAUDE_SKILLS/$skill_name"
+        echo "   → Linked: $skill_name"
+        SKILL_COUNT=$((SKILL_COUNT + 1))
+    fi
+done
 
-echo "   ✓ Created 7 skill symlinks in $CLAUDE_SKILLS"
+echo "   ✓ Created $SKILL_COUNT skill symlinks in $CLAUDE_SKILLS"
 
 # 7. Verify setup
 echo "✅ Verifying setup..."
