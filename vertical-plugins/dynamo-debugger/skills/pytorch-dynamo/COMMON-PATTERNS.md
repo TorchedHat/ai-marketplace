@@ -324,6 +324,92 @@ def call_method(self, tx, name, args, kwargs):
 - **Store**: Variable stored in container
 - **Load**: Variable loaded from container
 
+## Triggering Graph Breaks Properly
+
+**When**: Implementing code that needs to trigger a graph break (unsupported operation, export mode restriction, etc.).
+
+**Pattern**: Use the hint system for proper categorization and user guidance.
+
+```python
+from torch._dynamo.exc import unimplemented
+from torch._dynamo import graph_break_hints
+
+# Example: Unsupported data-dependent control flow
+if not self._can_trace_operation(tx):
+    unimplemented(
+        gb_type="data_dependent_control_flow",  # Category (no dynamic strings)
+        context=f"control flow depends on {var_name}",  # Dynamic details
+        explanation="Cannot trace data-dependent if statement",
+        hints=[*graph_break_hints.FUNDAMENTAL],  # Hint category
+    )
+```
+
+### Hint Categories
+
+| Hint | Meaning | When to Use |
+|------|---------|-------------|
+| `SUPPORTABLE` | Could be implemented with effort | Feature request, not fundamental limitation |
+| `FUNDAMENTAL` | Inherent limitation of tracing | Data-dependent control flow, dynamic operations |
+| `DIFFICULT` | Very hard to implement | Complex Python semantics, CPython internals |
+| `DYNAMO_BUG` | Internal Dynamo error | Dynamo implementation bug, not user code |
+| `USER_ERROR` | User code problem | Invalid usage, type errors |
+| `CAUSED_BY_EARLIER_GRAPH_BREAK` | Cascading break | Break caused by previous break |
+
+### Components of `unimplemented()`
+
+```python
+unimplemented(
+    gb_type="category_name",           # Static category (for grouping)
+    context=f"details: {dynamic_val}",  # Dynamic context (for debugging)
+    explanation="User-facing explanation of why this breaks",
+    hints=[*graph_break_hints.CATEGORY],  # Categorization hints
+)
+```
+
+### Examples
+
+**Data-dependent control flow**:
+```python
+# In VariableTracker.call_method when tracing if statement
+if depends_on_tensor_value:
+    unimplemented(
+        gb_type="data_dependent_control_flow",
+        context=f"if condition depends on tensor {tensor_var}",
+        explanation="Cannot determine branch at trace time",
+        hints=[*graph_break_hints.FUNDAMENTAL],
+    )
+```
+
+**Unsupported Python feature**:
+```python
+# In InstructionTranslator opcode handler
+unimplemented(
+    gb_type="unsupported_builtin",
+    context=f"builtin function {fn_name} not supported",
+    explanation=f"Dynamo doesn't support {fn_name} builtin",
+    hints=[*graph_break_hints.SUPPORTABLE],
+)
+```
+
+**Export mode restriction**:
+```python
+# In VariableTracker method when export=True
+if tx.export and not self._export_compatible():
+    unimplemented(
+        gb_type="export_mode_restriction",
+        context=f"operation {op_name} not allowed in export",
+        explanation="This operation requires graph break, not allowed in export",
+        hints=[*graph_break_hints.FUNDAMENTAL],
+    )
+```
+
+### Tips
+
+- **`gb_type`**: Use consistent names (check existing `unimplemented()` calls)
+- **`context`**: Include dynamic values to help debugging
+- **`explanation`**: User-facing message - explain *why* it breaks
+- **`hints`**: Choose appropriate category - helps users understand if it's a bug or limitation
+
 ## Polyfill Pattern
 
 **When**: Need to inline a C/C++ function for tracing.

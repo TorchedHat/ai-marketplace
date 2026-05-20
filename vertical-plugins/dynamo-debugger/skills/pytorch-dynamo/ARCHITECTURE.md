@@ -416,6 +416,77 @@ def my_backend(gm: torch.fx.GraphModule, example_inputs):
     return gm.forward
 ```
 
+## C++ Runtime (`torch/csrc/dynamo/`)
+
+Performance-critical runtime layer called on every Python frame. Understanding this layer is important for debugging performance issues, cache behavior, and guard evaluation.
+
+### Frame Evaluation
+
+**`eval_frame.c`**: Installs PEP 523 frame hook via `_PyInterpreterState_SetEvalFrameFunc` to intercept all Python function calls.
+
+**`eval_frame_cpp.cpp`**: Core frame interception logic. `dynamo__custom_eval_frame` is called for every Python frame:
+- Gets `ExtraState` from code object (cache lookup)
+- Builds `FrameLocalsMapping` for O(1) locals access (avoids dict materialization)
+- Evaluates guards via `run_root_guard_manager()` across all cached entries (LRU ordered)
+- On **cache hit**: executes compiled code via shadow frame (copies `localsplus` into new frame)
+- On **cache miss**: calls Python callback to trigger compilation
+
+### Cache System
+
+**`extra_state.cpp/.h`**: `ExtraState` attached per code object via `_PyCode_SetExtra`:
+- `cache_entry_list`: LRU linked list of compiled versions
+- `frame_state`: Dynamic shapes detection state
+- `FrameExecStrategy`: Execution mode selection
+
+**`cache_entry.cpp/.h`**: Each `CacheEntry` stores:
+- `RootGuardManager*`: C++ guard tree (raw pointer for fast eval)
+- Compiled code object
+- Backend reference
+
+### Guard Evaluation Tree
+
+**`guards.cpp`** (~7800 lines): Guards organized as C++ tree mirroring data access patterns for fast runtime checking.
+
+**`RootGuardManager`**: Root node receiving `FrameLocalsMapping` (frame locals + cells + freevars).
+
+**LeafGuard types** (concrete checks):
+- `TYPE_MATCH`: `Py_TYPE` pointer comparison
+- `ID_MATCH`: `id()` comparison
+- `EQUALS_MATCH`: Value equality
+- `TENSOR_MATCH`: dtype/device/shape/strides/dispatch keys (all in C++)
+- `DICT_VERSION`: Dict version tag check
+- `GLOBAL_STATE`: Grad mode, autocast state, etc.
+
+**GuardAccessor types** (tree edges):
+- `FrameLocalsGuardAccessor`: O(1) index into frame
+- `GetAttrGuardAccessor`: Attribute access
+- `DictGetItemGuardAccessor`: Dict item access
+- `GlobalsGuardAccessor`: Global variable access
+
+**Optimizations**:
+- Fail-fast accessor reordering (check likely-to-fail guards first)
+- Dict version tag matching to skip subtrees
+- `FrameLocalsMapping` avoids dict construction overhead
+- `check_nopybind()` avoids pybind11 overhead in hot paths
+
+### Other Key Files
+
+- **`framelocals_mapping.cpp`**: O(1) access to frame locals/cells/freevars without dict
+- **`cpython_defs.c`**: Copied CPython internals for frame manipulation
+- **`init.cpp`**: `torch._C._dynamo` module definition and pybind11 bindings
+- **`debug_macros.h`**: Debug utilities (`DEBUG_TRACE`, `NULL_CHECK`, `INSPECT(...)` drops into pdb from C)
+- **`compiled_autograd.cpp/.h`**: Compiled autograd engine
+
+### Why C++ Matters for Dynamo Development
+
+**Guard performance**: Guard evaluation runs on *every* function call. C++ implementation is critical for production performance.
+
+**Cache lookup**: Cache check happens before Python-level compilation logic. Understanding cache behavior helps debug recompilation issues.
+
+**Debugging**: Runtime crashes often originate in C++ layer. Understanding the frame evaluation flow helps debug segfaults and mysterious errors.
+
+**Frame manipulation**: CPython frame internals are complex. The C++ layer handles low-level frame creation and manipulation for compiled code execution.
+
 ## Performance Considerations
 
 ### Graph Breaks

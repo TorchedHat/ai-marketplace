@@ -28,12 +28,36 @@ Dynamo is PyTorch's JIT compiler that intercepts Python bytecode execution to tr
 ## When to Use This Skill
 
 Activate when:
-- Working with `torch.compile()` or `torch/_dynamo/` code
-- Debugging guard failures or compilation errors
-- Implementing new VariableTracker types or opcode handlers
-- Understanding pytree integration with compilation
-- Adding support for new Python features/types
+- **Implementing** Dynamo features or fixes (VariableTracker, opcode handlers, etc.)
+- **Understanding** Dynamo internals (symbolic execution, guards, bytecode)
+- **Developing** new PyTorch compilation support
 - Writing tests in `test/dynamo/`
+
+> **For user-level debugging** (graph breaks, TORCH_LOGS, FX graphs): Use `compile-trace-dynamo` skill instead.
+> This skill is for **Dynamo contributors** implementing/fixing Dynamo code.
+
+## Implementation Workflow
+
+When implementing a Dynamo feature or fixing an internal issue:
+
+1. **Understand the requirement** - What behavior needs to change?
+2. **Locate the code** - Use [ARCHITECTURE.md](ARCHITECTURE.md) to find relevant files
+3. **Write a test** - Add failing test BEFORE implementing (`test/dynamo/`)
+4. **Implement** - Follow patterns in [COMMON-PATTERNS.md](COMMON-PATTERNS.md)
+5. **Debug** - Use [DEBUGGING-GUIDE.md](DEBUGGING-GUIDE.md) for implementation-level debugging
+6. **Verify** - Run new test + related existing tests
+7. **Review** - Check that implementation follows [development principles](ARCHITECTURE.md#development-rules)
+
+## Implementation Quick Reference
+
+| Task | See |
+|------|-----|
+| Add new opcode handler | [COMMON-PATTERNS.md](COMMON-PATTERNS.md#adding-new-opcode-support) |
+| Create VariableTracker type | [COMMON-PATTERNS.md](COMMON-PATTERNS.md#creating-new-variabletracker) |
+| Add pytree support | [PYTREE-INTEGRATION.md](PYTREE-INTEGRATION.md) |
+| Fix guard generation | [GUARD.md](GUARD.md) |
+| Debug bytecode issues | [DEBUGGING-GUIDE.md](DEBUGGING-GUIDE.md#1-bytecode-capture-incorrect) |
+| Debug Variable conversion | [DEBUGGING-GUIDE.md](DEBUGGING-GUIDE.md#2-object--variable-conversion-incorrect) |
 
 ## Core Concepts (30-Second Version)
 
