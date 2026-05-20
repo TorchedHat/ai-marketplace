@@ -4,7 +4,7 @@
 
 Multi-agent development system for PyTorch torch.compile, organized using Anthropic's vertical plugin pattern. Provides MCP tools, stage-specific skills, and structured agent definitions for debugging across all compilation stages (Dynamo, AOT Autograd, Inductor).
 
-**Design Philosophy**: 
+**Design Philosophy**:
 - **Vertical Organization** - Domain-based structure (not type-based)
 - **Agent Formalization** - Structured definitions with JSON schemas
 - **Simple Parsers** - Aligned with torch.compile IR levels
@@ -93,8 +93,8 @@ Skills are organized by **compilation stage** rather than file type:
 - Easy to see what belongs to each stage
 - Skills synced to agent bundles via automation
 
-**Source of Truth:** `vertical-plugins/` and `coordinator/`  
-**Agent Bundles:** `agent-plugins/*/skills/` (auto-synced)  
+**Source of Truth:** `vertical-plugins/` and `coordinator/`
+**Agent Bundles:** `agent-plugins/*/skills/` (auto-synced)
 **Backward Compatibility:** `.claude/skills/` symlinks to vertical-plugins
 
 ### Agent Formalization (Phase 2)
@@ -276,10 +276,10 @@ Add to `~/.claude/settings.json`:
   "mcpServers": {
     "torch-compile-ai": {
       "command": "python",
-      "args": ["/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai/server.py"],
-      "cwd": "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai",
+      "args": ["/workspaces/pytorch-devcontainers/torch-compile-ai/server.py"],
+      "cwd": "/workspaces/pytorch-devcontainers/torch-compile-ai",
       "env": {
-        "PYTHONPATH": "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai"
+        "PYTHONPATH": "/workspaces/pytorch-devcontainers/torch-compile-ai"
       }
     }
   }
@@ -327,13 +327,13 @@ All schemas validated with `python -m json.tool`
 
 ### Container Environment
 
-**Persistent:** `/workspaces/` (code + PyTorch indices)  
+**Persistent:** `/workspaces/` (code + PyTorch indices)
 **Ephemeral:** `~/.claude/settings.json`, pip packages
 
 ### Setup Script
 
 ```bash
-cd /workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai
+cd /workspaces/pytorch-devcontainers/torch-compile-ai
 ./setup.sh
 ```
 
@@ -381,8 +381,8 @@ pytest tests/analyzers/test_inductor_parsers.py::TestParseOutputCode::test_trito
 ## Multi-Agent System
 
 ### Coordinator Agent
-**Location:** `agent-plugins/coordinator-agent/`  
-**Skills:** compile-overview  
+**Location:** `agent-plugins/coordinator-agent/`
+**Skills:** compile-overview
 **Role:** Routes tasks to specialists, synthesizes results, presents unified guidance
 
 **Capabilities:**
@@ -393,24 +393,24 @@ pytest tests/analyzers/test_inductor_parsers.py::TestParseOutputCode::test_trito
 
 ### Specialist Agents
 
-**Dynamo Debugger Agent**  
-**Location:** `agent-plugins/dynamo-debugger-agent/`  
-**Skills:** pytorch-dynamo, compile-trace-dynamo  
+**Dynamo Debugger Agent**
+**Location:** `agent-plugins/dynamo-debugger-agent/`
+**Skills:** pytorch-dynamo, compile-trace-dynamo
 **Specialization:** VariableTracker system, bytecode tracing, guard generation, graph breaks
 
-**Inductor Debugger Agent**  
-**Location:** `agent-plugins/inductor-debugger-agent/`  
-**Skills:** pytorch-inductor, compile-trace-inductor  
+**Inductor Debugger Agent**
+**Location:** `agent-plugins/inductor-debugger-agent/`
+**Skills:** pytorch-inductor, compile-trace-inductor
 **Specialization:** Lowering registration, IR nodes, Triton codegen, fusion patterns
 
-**AOT Debugger Agent**  
-**Location:** `agent-plugins/aot-debugger-agent/`  
-**Skills:** compile-trace-aot  
+**AOT Debugger Agent**
+**Location:** `agent-plugins/aot-debugger-agent/`
+**Skills:** compile-trace-aot
 **Specialization:** Functionalization, decompositions, joint graphs, partitioning
 
-**Bisector Agent**  
-**Location:** `agent-plugins/bisector-agent/`  
-**Skills:** compile-bisect  
+**Bisector Agent**
+**Location:** `agent-plugins/bisector-agent/`
+**Skills:** compile-bisect
 **Specialization:** Automated failure isolation, backend/subsystem binary search
 
 ### MCP Servers
@@ -419,8 +419,8 @@ pytest tests/analyzers/test_inductor_parsers.py::TestParseOutputCode::test_trito
 
 ### Tool Allowlists
 
-**Coordinator:** Read, Bash, MCP tools (steering + debug-tracer)  
-**Experts** (dynamo, inductor, aot): Read, MCP steering only (no Write/Edit)  
+**Coordinator:** Read, Bash, MCP tools (steering + debug-tracer)
+**Experts** (dynamo, inductor, aot): Read, MCP steering only (no Write/Edit)
 **Bisector:** Read, Bash (needs to run bisector command)
 
 ## Skill Sync & Validation
@@ -501,7 +501,7 @@ python scripts/validate-skills.py
 ## Reorganization History
 
 ### Phase 1: Vertical Organization (Complete ✅)
-**Date:** 2026-05-19  
+**Date:** 2026-05-19
 **Goal:** Reorganize from horizontal (type-based) to vertical (domain-based)
 
 **Changes:**
@@ -513,7 +513,7 @@ python scripts/validate-skills.py
 **See:** `/workspaces/pytorch-devcontainers/specs/agentic-workflow/REORGANIZATION-SUMMARY.md`
 
 ### Phase 2: Agent Formalization (Complete ✅)
-**Date:** 2026-05-19  
+**Date:** 2026-05-19
 **Goal:** Add structured agent definitions and automation
 
 **Phase 2A - Manifests & Schemas:**

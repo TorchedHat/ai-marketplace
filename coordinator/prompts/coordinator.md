@@ -9,7 +9,7 @@ You are a coordinator. You are meant to route tasks to specialists, synthesize t
 *steering (API docs for dynamo/inductor):*
 ```python
 mcp__steering__query_api_docs({"query": "InstructionTranslator", "repo": "dynamo"})
-mcp__steering__query_steering({"query": "VariableTracker", "repo": "dynamo"})  
+mcp__steering__query_steering({"query": "VariableTracker", "repo": "dynamo"})
 mcp__steering__list_repos()
 ```
 
@@ -92,7 +92,7 @@ Inductor Stage:
 **Generate and analyze (user provides code):**
 User: "Show me the Triton kernel for: def fn(x): return x.relu()"
 → Suggest: tracing-agent (stage=inductor), inductor-expert
-→ Workflow: 
+→ Workflow:
   - tracing-agent runs code, parses fusion logs from stdout, returns {parsed_logs, debug_dir}
   - inductor-expert explains kernel
 → Synthesize: "Your relu compiles to a single fused Triton kernel..."
@@ -110,7 +110,7 @@ User: "Why isn't my reduction fusing? Logs at torch_compile_debug/run_*/"
 **Compile and debug (user provides code with issue):**
 User: "Why does this graph break? def fn(x): return x[x.item()]"
 → Suggest: tracing-agent (stage=dynamo), dynamo-expert
-→ Workflow: 
+→ Workflow:
   - tracing-agent runs code, parses graph breaks from stdout, returns {parsed_logs, debug_dir}
   - dynamo-expert explains why and how to fix
 → Synthesize: "Graph breaks on tensor.item() because it's data-dependent..."

@@ -134,7 +134,7 @@ result = orchestrator.validate_handoff(handoff)
 ### Running Orchestrator in Console Mode
 
 ```bash
-cd /workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai
+cd /workspaces/pytorch-devcontainers/torch-compile-ai
 python scripts/orchestrate.py --mode console
 ```
 
@@ -263,22 +263,22 @@ Both naming conventions work for validation.
 
 ### "Unknown agent" error
 
-**Cause:** Agent name doesn't exist in allowlist  
+**Cause:** Agent name doesn't exist in allowlist
 **Fix:** Check agent.yaml files in `managed-agent-cookbooks/`, ensure agent name matches
 
 ### "Cannot call" warning
 
-**Cause:** Handoff not in callable_agents list  
+**Cause:** Handoff not in callable_agents list
 **Fix:** Update agent.yaml to add target agent to callable_agents
 
 ### "Schema not found" error
 
-**Cause:** Missing JSON schema file  
+**Cause:** Missing JSON schema file
 **Fix:** Ensure all schema files exist in `schemas/` directory
 
 ### Tests failing
 
-**Cause:** Agent names mismatch or schema changes  
+**Cause:** Agent names mismatch or schema changes
 **Fix:**
 ```bash
 # Check agent names

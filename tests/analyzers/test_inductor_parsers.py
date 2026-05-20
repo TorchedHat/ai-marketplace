@@ -1,6 +1,7 @@
 """Tests for Inductor stage parsers."""
 
 import pytest
+
 from analyzers.inductor_parsers import (
     parse_fusion_decisions,
     parse_ir_post_fusion,

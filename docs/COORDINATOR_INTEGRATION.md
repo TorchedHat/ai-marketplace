@@ -106,7 +106,7 @@ Coordinator receives specialist response and synthesizes it for the user.
 ### Quick Validation
 
 ```bash
-cd /workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai
+cd /workspaces/pytorch-devcontainers/torch-compile-ai
 
 # Validate from argument
 python scripts/validate_handoff.py '{

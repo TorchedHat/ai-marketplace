@@ -8,11 +8,9 @@ Validates:
 - No circular dependencies
 """
 
-import json
 import shutil
 import sys
 from pathlib import Path
-from typing import Dict, List
 
 REPO_ROOT = Path(__file__).parent.parent
 VERTICAL_PLUGINS = REPO_ROOT / "vertical-plugins"
@@ -25,6 +23,7 @@ SKILL_MAPPINGS = {
     "aot-debugger-agent": ["compile-trace-aot"],
     "bisector-agent": ["compile-bisect"],
 }
+
 
 def find_skill_source(skill_name: str) -> Path:
     """Find skill source in vertical-plugins/ or coordinator/."""
@@ -43,6 +42,7 @@ def find_skill_source(skill_name: str) -> Path:
 
     raise FileNotFoundError(f"Skill {skill_name} not found in vertical-plugins/ or coordinator/")
 
+
 def sync_skill(source: Path, dest: Path) -> bool:
     """Sync skill from source to dest, return True if changed."""
     if dest.exists():
@@ -58,7 +58,8 @@ def sync_skill(source: Path, dest: Path) -> bool:
     shutil.copytree(source, dest, symlinks=True)
     return True
 
-def validate_skill(skill_path: Path) -> List[str]:
+
+def validate_skill(skill_path: Path) -> list[str]:
     """Validate skill YAML frontmatter and structure."""
     errors = []
     skill_md = skill_path / "SKILL.md"
@@ -80,6 +81,7 @@ def validate_skill(skill_path: Path) -> List[str]:
             errors.append(f"{skill_path.name}: Missing {field} in frontmatter")
 
     return errors
+
 
 def main():
     """Sync all skills and validate."""
@@ -125,6 +127,7 @@ def main():
     else:
         print("✅ All skills valid")
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

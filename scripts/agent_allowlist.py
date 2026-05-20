@@ -5,6 +5,7 @@ handoff requests against the allowlist.
 """
 
 from pathlib import Path
+
 import yaml
 
 
@@ -45,17 +46,14 @@ def build_allowlist(agent_manifest_dir: Path) -> dict[str, list[str]]:
             callable = manifest.get("callable_agents", [])
             allowlist[agent_name] = callable
 
-        except (yaml.YAMLError, IOError) as e:
+        except (OSError, yaml.YAMLError) as e:
             print(f"Warning: Failed to load {agent_yaml_path}: {e}")
             continue
 
     return allowlist
 
 
-def validate_handoff_allowlist(
-    handoff: dict,
-    allowlist: dict[str, list[str]]
-) -> tuple[bool, str]:
+def validate_handoff_allowlist(handoff: dict, allowlist: dict[str, list[str]]) -> tuple[bool, str]:
     """Validate that handoff is allowed according to callable_agents.
 
     Checks if the from_agent is permitted to call the to_agent based on

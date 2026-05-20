@@ -31,11 +31,11 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "log_content": {
                         "type": "string",
-                        "description": "Stdout from TORCH_LOGS='graph_breaks'"
+                        "description": "Stdout from TORCH_LOGS='graph_breaks'",
                     }
                 },
-                "required": ["log_content"]
-            }
+                "required": ["log_content"],
+            },
         ),
         Tool(
             name="parse_fx_graph",
@@ -45,11 +45,11 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "graph_content": {
                         "type": "string",
-                        "description": "Content of fx_graph_readable.py file"
+                        "description": "Content of fx_graph_readable.py file",
                     }
                 },
-                "required": ["graph_content"]
-            }
+                "required": ["graph_content"],
+            },
         ),
         Tool(
             name="parse_pre_grad_passes",
@@ -59,17 +59,16 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "before_content": {
                         "type": "string",
-                        "description": "Content of fx_graph_readable.py (before passes)"
+                        "description": "Content of fx_graph_readable.py (before passes)",
                     },
                     "after_content": {
                         "type": "string",
-                        "description": "Content of fx_graph_transformed.py (after passes)"
-                    }
+                        "description": "Content of fx_graph_transformed.py (after passes)",
+                    },
                 },
-                "required": ["before_content", "after_content"]
-            }
+                "required": ["before_content", "after_content"],
+            },
         ),
-
         # ================================================================
         # AOT Stage (3 tools)
         # ================================================================
@@ -81,11 +80,11 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "graph_content": {
                         "type": "string",
-                        "description": "Content of joint graph file"
+                        "description": "Content of joint graph file",
                     }
                 },
-                "required": ["graph_content"]
-            }
+                "required": ["graph_content"],
+            },
         ),
         Tool(
             name="parse_aot_graphs",
@@ -95,15 +94,15 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "forward_content": {
                         "type": "string",
-                        "description": "Content of forward graph file"
+                        "description": "Content of forward graph file",
                     },
                     "backward_content": {
                         "type": "string",
-                        "description": "Content of backward graph file (optional)"
-                    }
+                        "description": "Content of backward graph file (optional)",
+                    },
                 },
-                "required": ["forward_content"]
-            }
+                "required": ["forward_content"],
+            },
         ),
         Tool(
             name="parse_post_grad_passes",
@@ -113,13 +112,12 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "log_content": {
                         "type": "string",
-                        "description": "Stdout or file content from post_grad_graphs logging"
+                        "description": "Stdout or file content from post_grad_graphs logging",
                     }
                 },
-                "required": ["log_content"]
-            }
+                "required": ["log_content"],
+            },
         ),
-
         # ================================================================
         # Inductor Stage (3 tools)
         # ================================================================
@@ -131,11 +129,11 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "log_content": {
                         "type": "string",
-                        "description": "Stdout from TORCH_LOGS='fusion,schedule'"
+                        "description": "Stdout from TORCH_LOGS='fusion,schedule'",
                     }
                 },
-                "required": ["log_content"]
-            }
+                "required": ["log_content"],
+            },
         ),
         Tool(
             name="parse_ir_post_fusion",
@@ -145,11 +143,11 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "ir_content": {
                         "type": "string",
-                        "description": "Content of ir_post_fusion_*.txt file"
+                        "description": "Content of ir_post_fusion_*.txt file",
                     }
                 },
-                "required": ["ir_content"]
-            }
+                "required": ["ir_content"],
+            },
         ),
         Tool(
             name="parse_output_code",
@@ -159,11 +157,11 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "code_content": {
                         "type": "string",
-                        "description": "Content of output_code.py file"
+                        "description": "Content of output_code.py file",
                     }
                 },
-                "required": ["code_content"]
-            }
+                "required": ["code_content"],
+            },
         ),
     ]
 
@@ -194,8 +192,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         result = await aot_parsers.parse_aot_joint_graph(arguments["graph_content"])
     elif name == "parse_aot_graphs":
         result = await aot_parsers.parse_aot_graphs(
-            arguments["forward_content"],
-            arguments.get("backward_content")
+            arguments["forward_content"], arguments.get("backward_content")
         )
     elif name == "parse_post_grad_passes":
         result = await aot_parsers.parse_post_grad_passes(arguments["log_content"])
@@ -219,11 +216,7 @@ async def main():
     from mcp.server.stdio import stdio_server
 
     async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
+        await app.run(read_stream, write_stream, app.create_initialization_options())
 
 
 if __name__ == "__main__":

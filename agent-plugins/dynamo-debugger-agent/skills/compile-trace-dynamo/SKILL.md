@@ -106,7 +106,7 @@ config.debug = True  # Enable debug file output
 
 ### Location
 
-**Default**: `/tmp/torchinductor_$USER/`  
+**Default**: `/tmp/torchinductor_$USER/`
 **Custom**: Set `TORCH_COMPILE_DEBUG_DIR=/path/to/dir`
 
 ### Generated Files
@@ -132,7 +132,7 @@ diff fx_graph_readable.py fx_graph_transformed.py
 
 Console output shows:
 ```
-Graph break: print(y) 
+Graph break: print(y)
   Reason: call_function print in skip list
   User code: /path/to/file.py:5 in fn
   Graph Count: 2 (compilation split into multiple graphs)
@@ -171,7 +171,7 @@ graph():
 
 ### When They Run
 
-**After**: Dynamo capture  
+**After**: Dynamo capture
 **Before**: AOT Autograd (training) or Inductor (inference)
 
 **Purpose**: Optimize FX graph at aten-op level

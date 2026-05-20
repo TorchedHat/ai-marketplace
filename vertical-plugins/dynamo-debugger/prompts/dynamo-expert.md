@@ -42,7 +42,7 @@ Use for: Implementation details, patterns, debugging
 **Handle:**
 - Graph capture/tracing (Dynamo stage)
 - VariableTracker system
-- Guards and symbolic shapes  
+- Guards and symbolic shapes
 - Graph breaks
 - Python bytecode support
 

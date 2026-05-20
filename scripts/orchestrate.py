@@ -133,9 +133,7 @@ class TorchCompileOrchestrator:
             warnings.extend([f"Schema: {e}" for e in schema_errors])
 
         # Validate against allowlist
-        allowlist_valid, allowlist_error = validate_handoff_allowlist(
-            handoff, self.allowlist
-        )
+        allowlist_valid, allowlist_error = validate_handoff_allowlist(handoff, self.allowlist)
         if not allowlist_valid:
             warnings.append(f"Allowlist: {allowlist_error}")
 
@@ -143,13 +141,13 @@ class TorchCompileOrchestrator:
         if self.validation_mode == "permissive":
             valid = True
             if warnings:
-                print(f"[ORCHESTRATOR] ⚠️  Warnings (allowing anyway):")
+                print("[ORCHESTRATOR] ⚠️  Warnings (allowing anyway):")
                 for warning in warnings:
                     print(f"[ORCHESTRATOR]     {warning}")
         else:
             valid = schema_valid and allowlist_valid
             if not valid:
-                print(f"[ORCHESTRATOR] ❌ Validation failed:")
+                print("[ORCHESTRATOR] ❌ Validation failed:")
                 for warning in warnings:
                     print(f"[ORCHESTRATOR]     {warning}")
 
@@ -160,9 +158,7 @@ class TorchCompileOrchestrator:
             "allowlist_valid": allowlist_valid,
         }
 
-    def validate_agent_response(
-        self, response: dict, agent_name: str
-    ) -> dict[str, Any]:
+    def validate_agent_response(self, response: dict, agent_name: str) -> dict[str, Any]:
         """Validate agent response against stage-specific schema.
 
         Args:
@@ -225,9 +221,7 @@ def main():
     """Run orchestrator in console mode for testing."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Torch-compile multi-agent orchestrator"
-    )
+    parser = argparse.ArgumentParser(description="Torch-compile multi-agent orchestrator")
     parser.add_argument(
         "--mode",
         choices=["console", "validate"],

@@ -1,6 +1,7 @@
 """Tests for Dynamo stage parsers."""
 
 import pytest
+
 from analyzers.dynamo_parsers import (
     parse_fx_graph,
     parse_graph_breaks,

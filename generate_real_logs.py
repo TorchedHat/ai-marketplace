@@ -4,17 +4,18 @@ Generate real torch.compile logs for testing parsers.
 """
 
 import os
+from pathlib import Path
+
 import torch
 import torch._inductor.config as config
-from pathlib import Path
 
 # Configure output directory to current working directory
 project_root = Path(__file__).parent
-os.environ['TORCH_COMPILE_DEBUG_DIR'] = str(project_root)
-os.environ['TORCH_COMPILE_DEBUG'] = '1'
+os.environ["TORCH_COMPILE_DEBUG_DIR"] = str(project_root)
+os.environ["TORCH_COMPILE_DEBUG"] = "1"
 
 # Enable all logging
-os.environ['TORCH_LOGS'] = 'graph_breaks,fusion,schedule,dynamo,inductor'
+os.environ["TORCH_LOGS"] = "graph_breaks,fusion,schedule,dynamo,inductor"
 
 # Enable IR debug output
 config.trace.enabled = True
@@ -23,6 +24,7 @@ torch._dynamo.config.verbose = True
 print("Generating compilation logs...")
 print(f"Output will be in: {project_root}/torch_compile_debug/")
 print("=" * 60)
+
 
 # Test 1: Function with graph breaks
 @torch.compile
@@ -70,7 +72,7 @@ class SimpleModel(torch.nn.Module):
 
 def test_compilation():
     """Run compilation tests."""
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}\n")
 
     # Test 1: Graph breaks
@@ -91,7 +93,7 @@ def test_compilation():
     print(f"✓ Compiled, output shape: {y2.shape}\n")
 
     # Test 3: Training (AOT graphs)
-    if device == 'cuda':  # AOT graphs mainly for training on CUDA
+    if device == "cuda":  # AOT graphs mainly for training on CUDA
         print("Test 3: Training model (AOT graphs)")
         print("-" * 40)
         model = SimpleModel().to(device)

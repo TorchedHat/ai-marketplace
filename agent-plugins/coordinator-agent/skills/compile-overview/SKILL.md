@@ -91,15 +91,15 @@ GPU Execution
 **Bisect output determines which skill to load:**
 
 ### Bisect Result: `backend='eager'`
-**Stage**: Dynamo (capture, no AOT)  
-**Load**: `compile-trace-dynamo` skill  
-**Likely issues**: Graph breaks, unsupported operations, VariableTracker issues  
+**Stage**: Dynamo (capture, no AOT)
+**Load**: `compile-trace-dynamo` skill
+**Likely issues**: Graph breaks, unsupported operations, VariableTracker issues
 **Fix with**: `pytorch-dynamo` skill (if implementing/fixing)
 
 ### Bisect Result: `backend='aot_eager'` or `backend='aot_eager_decomp_partition'`
-**Stage**: AOT Autograd  
-**Load**: `compile-trace-aot` skill  
-**Likely issues**: Functionalization, decompositions, partitioning, post-grad passes  
+**Stage**: AOT Autograd
+**Load**: `compile-trace-aot` skill
+**Likely issues**: Functionalization, decompositions, partitioning, post-grad passes
 **Fix with**: Core PyTorch (AOT internals are not in pytorch-inductor skill)
 
 **Subsystem details:**
@@ -107,9 +107,9 @@ GPU Execution
 - `subsystem='decomposition'` → Operator decomposition
 
 ### Bisect Result: `backend='inductor'`
-**Stage**: Inductor compiler  
-**Load**: `compile-trace-inductor` skill  
-**Likely issues**: Lowerings, fusion, scheduling, codegen  
+**Stage**: Inductor compiler
+**Load**: `compile-trace-inductor` skill
+**Likely issues**: Lowerings, fusion, scheduling, codegen
 **Fix with**: `pytorch-inductor` skill (if implementing/fixing)
 
 **Subsystem details:**

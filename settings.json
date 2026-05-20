@@ -9,11 +9,11 @@
     "debug-tracer": {
       "command": "python",
       "args": [
-        "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai/server.py"
+        "/workspaces/pytorch-devcontainers/torch-compile-ai/server.py"
       ],
-      "cwd": "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai",
+      "cwd": "/workspaces/pytorch-devcontainers/torch-compile-ai",
       "env": {
-        "PYTHONPATH": "/workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai"
+        "PYTHONPATH": "/workspaces/pytorch-devcontainers/torch-compile-ai"
       }
     }
   }

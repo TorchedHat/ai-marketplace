@@ -4,21 +4,19 @@ Tests allowlist building, schema validation, handoff validation,
 and permissive mode operation.
 """
 
-import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add scripts to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from agent_allowlist import build_allowlist, validate_handoff_allowlist
+from orchestrate import TorchCompileOrchestrator
 from orchestrate_schemas import (
     load_schemas,
     validate_handoff_request,
     validate_response,
 )
-from orchestrate import TorchCompileOrchestrator
-
 
 # Test fixtures
 TEST_ROOT = Path(__file__).parent.parent

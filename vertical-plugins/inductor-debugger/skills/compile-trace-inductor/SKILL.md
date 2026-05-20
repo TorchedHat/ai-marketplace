@@ -42,7 +42,7 @@ Complete guide to tracing PyTorch Inductor: IR lowering, scheduler, fusion, loop
 
 ## Inductor Pipeline Summary
 
-**Inductor receives**: FX graph with ATen ops (from Dynamo or AOT Autograd)  
+**Inductor receives**: FX graph with ATen ops (from Dynamo or AOT Autograd)
 **Inductor produces**: Compiled GPU/CPU kernels
 
 ```
@@ -170,7 +170,7 @@ class SchedulerBuffer:
     mpi_buffer: MemoryPlanningInfo      # Memory planning metadata
 ```
 
-**Purpose**: 
+**Purpose**:
 - Tracks which operation creates a buffer
 - Tracks which operations use the buffer
 - Enables buffer lifetime analysis and memory reuse
@@ -325,7 +325,7 @@ buf0 = ir.ComputedBuffer(
 )
 
 buf1 = ir.ComputedBuffer(
-    name="buf1", 
+    name="buf1",
     data=ir.Pointwise(
         inner_fn=lambda idx: ops.add(ops.load("buf0", idx), 1.0),
         ranges=[10, 100]
@@ -412,7 +412,7 @@ FusionDecision: buf1 (Pointwise) <- consumer
   ✓ Vertical fusion (producer-consumer)
   → Fused into 1 kernel
 
-FusionDecision: fused_pw (Fused Pointwise) <- producer  
+FusionDecision: fused_pw (Fused Pointwise) <- producer
 FusionDecision: buf2 (Reduction) <- consumer
   ✗ Cannot fuse: Different iteration structure
   → Separate kernel
@@ -493,21 +493,21 @@ def inner_fn(index):
 ```python
 class triton_poi_fused_arange_mul_0_loop_body:
     var_ranges = {p0: 11}  # Iteration space
-    
+
     # Index expressions (computed once, reused)
     index0 = p0                 # For store position
     index1 = 1000000000*p0      # For computed value
-    
+
     def body(self, ops):
         # Get index for value computation
         get_index = self.get_index('index1')
-        
+
         # Convert index to value with specified dtype
         index_expr = ops.index_expr(get_index, torch.int64)
-        
+
         # Get index for store position
         get_index_2 = self.get_index('index0')
-        
+
         # Store result
         store = ops.store('buf0', get_index_2, index_expr, None)
         #                         ^^^^^^^^^^^^  ^^^^^^^^^^
@@ -580,11 +580,11 @@ def triton_poi_fused_arange_mul_0(out_ptr0, xnumel, XBLOCK: tl.constexpr):
     xoffset = tl.program_id(0) * XBLOCK
     xindex = xoffset + tl.arange(0, XBLOCK)
     xmask = xindex < xnumel
-    
+
     # Computation (from ops.* operations)
     x0 = xindex  # Iteration variable (int32)
     tmp0 = 1000000000*x0  # Value computation
-    
+
     # Store result
     tl.store(out_ptr0 + x0, tmp0, xmask)
 ```
@@ -749,7 +749,7 @@ tl.store(out_ptr + xindex, tmp1)
 
 1. **Each stage serves a specific purpose**: Dynamo captures, AOT transforms, Inductor lowers, Scheduler fuses, LoopBody defines, Codegen generates
 
-2. **Two-level design (IR + Scheduler)**: 
+2. **Two-level design (IR + Scheduler)**:
    - IR nodes (Pointwise, Reduction) define WHAT to compute
    - Scheduler wrappers (SchedulerNode, FusedSchedulerNode) define HOW and WHEN
    - This separation enables fusion without modifying IR nodes
@@ -758,7 +758,7 @@ tl.store(out_ptr + xindex, tmp1)
 
 4. **Progressive lowering**: Each stage takes higher-level representation and lowers it
 
-5. **FX graphs appear twice**: 
+5. **FX graphs appear twice**:
    - Dynamo FX graph (aten ops)
    - LoopBody FX graph (ops.* operations)
    These are different!

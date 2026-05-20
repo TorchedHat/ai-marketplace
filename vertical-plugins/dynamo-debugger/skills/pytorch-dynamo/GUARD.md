@@ -328,7 +328,7 @@ Need size/numel/stride?
 static Tensor cross_entropy_loss_prob_target(...) {
   const auto class_dim = self.dim() == 1 ? 0 : 1;        // OK
   const auto n_classes = self.size(class_dim);           // ❌ Guard!
-  TORCH_CHECK(!weight.defined() || 
+  TORCH_CHECK(!weight.defined() ||
       (weight.dim() == 1 && weight.numel() == n_classes), // ❌ Guards!
       "weight should be defined for all ", n_classes,
       " classes but got ", weight.sizes());               // ❌ Guard!
@@ -344,7 +344,7 @@ static Tensor cross_entropy_loss_prob_target(...) {
 static Tensor cross_entropy_loss_prob_target(...) {
   const auto class_dim = self.dim() == 1 ? 0 : 1;        // OK
   const auto n_classes = self.sym_size(class_dim);       // ✅ Symbolic!
-  TORCH_CHECK(!weight.defined() || 
+  TORCH_CHECK(!weight.defined() ||
       (weight.dim() == 1 && weight.sym_numel() == n_classes), // ✅ Symbolic!
       "weight should be defined for all ", n_classes,
       " classes but got ", weight.sym_sizes());           // ✅ Symbolic!

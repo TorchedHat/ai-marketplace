@@ -58,15 +58,15 @@ import torch
 def main():
     torch._dynamo.reset()
     backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
-    
+
     @torch.compile(backend=backend)
     def fn(x):
         return x.sin().argmin()  # Your failing operation
-    
+
     x = torch.randn(10)
     result = fn(x)
     expected = x.sin().argmin()  # Eager reference
-    
+
     if torch.equal(result, expected):
         return 0  # PASS
     else:

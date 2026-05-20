@@ -18,7 +18,7 @@ Anthropic-pattern multi-agent debugging system for PyTorch compiler development.
 
 ```bash
 # 1. Run setup (one-time per container startup)
-cd /workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai
+cd /workspaces/pytorch-devcontainers/torch-compile-ai
 ./setup.sh
 
 # 2. Skills are auto-discoverable - just ask!
@@ -28,7 +28,7 @@ cd /workspaces/pytorch-devcontainers/ai-tooling/torch-compile-ai
 #   "Show me the Triton kernel for: def fn(x): return x.relu()"
 ```
 
-**First run:** ~10-15 minutes (includes PyTorch indexing)  
+**First run:** ~10-15 minutes (includes PyTorch indexing)
 **Subsequent:** ~30 seconds
 
 **Note**: Skills are always discoverable through the Claude Code skill system. No need to load prompts manually - the system routes automatically.
@@ -85,7 +85,7 @@ See `tests/multi-agent/test_scenarios.md` for complete examples.
 ## Structure
 
 ```
-ai-tooling/torch-compile-ai/
+torch-compile-ai/
 ├── vertical-plugins/              # Skills organized by stage (source of truth)
 │   ├── dynamo-debugger/
 │   │   ├── skills/compile-trace-dynamo/, pytorch-dynamo/

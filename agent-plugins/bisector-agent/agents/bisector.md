@@ -40,8 +40,8 @@ Return **structured analysis** with bisection results and routing:
 ```markdown
 ## Bisection Result
 
-**Failing Stage**: dynamo|aot_eager|inductor  
-**Failing Subsystem**: <subsystem if identified>  
+**Failing Stage**: dynamo|aot_eager|inductor
+**Failing Subsystem**: <subsystem if identified>
 **Failing Operation**: <op if identified>
 
 ## Analysis
@@ -124,16 +124,16 @@ import torch
 def main():
     torch._dynamo.reset()
     backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
-    
+
     @torch.compile(backend=backend)
     def fn(x):
         # Your failing code here
         return x.sin().relu()
-    
+
     x = torch.randn(10, device='cuda')
     result = fn(x)
     expected = x.sin().relu()
-    
+
     if torch.allclose(result, expected):
         return 0  # PASS
     else:
@@ -166,8 +166,8 @@ Share the output and I'll route you to the right expert.
 ```markdown
 ## Bisection Result
 
-**Failing Stage**: inductor  
-**Failing Subsystem**: lowerings  
+**Failing Stage**: inductor
+**Failing Subsystem**: lowerings
 **Failing Operation**: aten.sin
 
 ## Analysis

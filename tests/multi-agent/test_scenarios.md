@@ -221,7 +221,7 @@ Implement linalg.det by ensuring it traces cleanly in Dynamo (likely already wor
 
 1. **Verify Dynamo tracing** (torch/_dynamo/variables/tensor.py)
    Test that det traces without graph breaks
-   
+
 2. **Add Inductor lowering** (torch/_inductor/lowering.py)
    Register @register_lowering(aten.linalg.det)
    Return ExternKernel calling library
@@ -336,7 +336,7 @@ Failed Fusions:
 - conv2d + relu
   Reason: ExternKernel (cuDNN conv) cannot vertically fuse
   Suggestion: Enable epilogue_fusion or cudnn_fusion config
-  
+
 Location: [file:line from log]
 ```
 

@@ -1,6 +1,7 @@
 """Tests for AOT stage parsers."""
 
 import pytest
+
 from analyzers.aot_parsers import (
     parse_aot_graphs,
     parse_aot_joint_graph,

@@ -4,17 +4,18 @@
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Set
 
 REPO_ROOT = Path(__file__).parent.parent
 VERTICAL_PLUGINS = REPO_ROOT / "vertical-plugins"
 
-def extract_skill_references(content: str) -> List[str]:
+
+def extract_skill_references(content: str) -> list[str]:
     """Extract [[skill-name]] references from content."""
-    pattern = r'\[\[([^\]]+)\]\]'
+    pattern = r"\[\[([^\]]+)\]\]"
     return re.findall(pattern, content)
 
-def validate_frontmatter(skill_path: Path) -> List[str]:
+
+def validate_frontmatter(skill_path: Path) -> list[str]:
     """Validate YAML frontmatter."""
     errors = []
     skill_md = skill_path / "SKILL.md"
@@ -44,7 +45,8 @@ def validate_frontmatter(skill_path: Path) -> List[str]:
 
     return errors
 
-def find_all_skills() -> Dict[str, Path]:
+
+def find_all_skills() -> dict[str, Path]:
     """Find all skills in vertical-plugins/."""
     skills = {}
     for vertical in VERTICAL_PLUGINS.iterdir():
@@ -58,7 +60,8 @@ def find_all_skills() -> Dict[str, Path]:
                 skills[skill.name] = skill
     return skills
 
-def validate_cross_references(skills: Dict[str, Path]) -> List[str]:
+
+def validate_cross_references(skills: dict[str, Path]) -> list[str]:
     """Validate cross-references between skills."""
     errors = []
 
@@ -73,12 +76,13 @@ def validate_cross_references(skills: Dict[str, Path]) -> List[str]:
 
     return errors
 
-def detect_circular_dependencies(skills: Dict[str, Path]) -> List[str]:
+
+def detect_circular_dependencies(skills: dict[str, Path]) -> list[str]:
     """Detect circular dependencies in skill references."""
     errors = []
 
     # Build dependency graph
-    graph: Dict[str, Set[str]] = {name: set() for name in skills}
+    graph: dict[str, set[str]] = {name: set() for name in skills}
 
     for skill_name, skill_path in skills.items():
         skill_md = skill_path / "SKILL.md"
@@ -87,7 +91,7 @@ def detect_circular_dependencies(skills: Dict[str, Path]) -> List[str]:
         graph[skill_name] = set(ref for ref in references if ref in skills)
 
     # DFS to detect cycles
-    def has_cycle(node: str, visited: Set[str], rec_stack: Set[str]) -> bool:
+    def has_cycle(node: str, visited: set[str], rec_stack: set[str]) -> bool:
         visited.add(node)
         rec_stack.add(node)
 
@@ -101,13 +105,14 @@ def detect_circular_dependencies(skills: Dict[str, Path]) -> List[str]:
         rec_stack.remove(node)
         return False
 
-    visited: Set[str] = set()
+    visited: set[str] = set()
     for skill_name in skills:
         if skill_name not in visited:
             if has_cycle(skill_name, visited, set()):
                 errors.append(f"Circular dependency detected involving: {skill_name}")
 
     return errors
+
 
 def main():
     """Run all validations."""
@@ -121,7 +126,7 @@ def main():
 
     # Validate frontmatter
     print("Validating YAML frontmatter...")
-    for skill_name, skill_path in skills.items():
+    for _, skill_path in skills.items():
         errors = validate_frontmatter(skill_path)
         all_errors.extend(errors)
     if not all_errors:
@@ -156,6 +161,7 @@ def main():
     else:
         print("✅ All validations passed")
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

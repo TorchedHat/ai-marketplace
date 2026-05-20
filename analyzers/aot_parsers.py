@@ -19,18 +19,18 @@ async def parse_aot_joint_graph(graph_content: str) -> str:
         Formatted analysis of joint graph structure
     """
     # Count forward vs backward operations
-    forward_ops = len(re.findall(r'#\s*forward', graph_content, re.IGNORECASE))
-    backward_ops = len(re.findall(r'#\s*backward', graph_content, re.IGNORECASE))
+    forward_ops = len(re.findall(r"#\s*forward", graph_content, re.IGNORECASE))
+    backward_ops = len(re.findall(r"#\s*backward", graph_content, re.IGNORECASE))
 
     # Total operations
-    all_ops = re.findall(r'torch\.ops\.(\w+)\.(\w+)', graph_content)
+    all_ops = re.findall(r"torch\.ops\.(\w+)\.(\w+)", graph_content)
     op_counts = Counter(f"{ns}.{op}" for ns, op in all_ops)
 
-    result = f"## AOT Joint Graph Analysis\n\n"
+    result = "## AOT Joint Graph Analysis\n\n"
     result += f"**Total operations:** {len(all_ops)}\n"
     result += f"**Forward operations:** ~{forward_ops}\n"
     result += f"**Backward operations:** ~{backward_ops}\n\n"
-    result += f"**Top operations:**\n"
+    result += "**Top operations:**\n"
     for op, count in op_counts.most_common(10):
         result += f"  - {op}: {count}\n"
 
@@ -49,19 +49,19 @@ async def parse_aot_graphs(forward_content: str, backward_content: str | None = 
         Formatted analysis of partitioned graphs
     """
     # Parse forward graph
-    fwd_ops = re.findall(r'torch\.ops\.(\w+)\.(\w+)', forward_content)
-    fwd_placeholders = len(re.findall(r'placeholder', forward_content))
+    fwd_ops = re.findall(r"torch\.ops\.(\w+)\.(\w+)", forward_content)
+    fwd_placeholders = len(re.findall(r"placeholder", forward_content))
 
-    result = f"## AOT Partitioned Graphs Analysis\n\n"
-    result += f"**Forward Graph:**\n"
+    result = "## AOT Partitioned Graphs Analysis\n\n"
+    result += "**Forward Graph:**\n"
     result += f"  - Operations: {len(fwd_ops)}\n"
     result += f"  - Inputs: {fwd_placeholders}\n"
 
     if backward_content:
-        bwd_ops = re.findall(r'torch\.ops\.(\w+)\.(\w+)', backward_content)
-        bwd_placeholders = len(re.findall(r'placeholder', backward_content))
+        bwd_ops = re.findall(r"torch\.ops\.(\w+)\.(\w+)", backward_content)
+        bwd_placeholders = len(re.findall(r"placeholder", backward_content))
 
-        result += f"\n**Backward Graph:**\n"
+        result += "\n**Backward Graph:**\n"
         result += f"  - Operations: {len(bwd_ops)}\n"
         result += f"  - Inputs (saved activations): {bwd_placeholders}\n"
         result += f"\n**Memory:** {bwd_placeholders} activations saved for backward\n"
@@ -80,12 +80,12 @@ async def parse_post_grad_passes(log_content: str) -> str:
         Formatted analysis of post-grad optimizations
     """
     # Look for pass names
-    passes = re.findall(r'Running pass:\s+(\w+)', log_content)
+    passes = re.findall(r"Running pass:\s+(\w+)", log_content)
 
     # Look for optimization messages
-    optimizations = re.findall(r'(Fused|Eliminated|Replaced|Optimized)\s+(.+)', log_content)
+    optimizations = re.findall(r"(Fused|Eliminated|Replaced|Optimized)\s+(.+)", log_content)
 
-    result = f"## Post-Grad Pass Analysis\n\n"
+    result = "## Post-Grad Pass Analysis\n\n"
 
     if passes:
         result += f"**Passes run:** {len(passes)}\n"

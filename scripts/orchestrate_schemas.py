@@ -5,8 +5,8 @@ Loads JSON schemas and validates handoff requests and agent responses against th
 
 import json
 from pathlib import Path
-import jsonschema
 
+import jsonschema
 
 # Mapping from agent name to response schema filename
 AGENT_TO_SCHEMA = {
@@ -45,17 +45,14 @@ def load_schemas(schema_dir: Path) -> dict[str, dict]:
             with open(schema_file) as f:
                 schema = json.load(f)
             schemas[schema_file.stem] = schema
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             print(f"Warning: Failed to load {schema_file}: {e}")
             continue
 
     return schemas
 
 
-def validate_handoff_request(
-    handoff: dict,
-    schemas: dict[str, dict]
-) -> tuple[bool, list[str]]:
+def validate_handoff_request(handoff: dict, schemas: dict[str, dict]) -> tuple[bool, list[str]]:
     """Validate handoff request against handoff_request.json schema.
 
     Args:
@@ -85,9 +82,7 @@ def validate_handoff_request(
 
 
 def validate_response(
-    response: dict,
-    agent_name: str,
-    schemas: dict[str, dict]
+    response: dict, agent_name: str, schemas: dict[str, dict]
 ) -> tuple[bool, list[str]]:
     """Validate agent response against its stage-specific schema.
 

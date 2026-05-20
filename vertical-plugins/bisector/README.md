@@ -17,7 +17,7 @@ Automated compilation failure isolation using PyTorch's compiler bisector tool.
 2. **Bisect output** identifies exact stage and operation
 3. **Route to vertical** based on backend:
    - `backend='eager'` → Load `dynamo-debugger/` vertical
-   - `backend='aot_*'` → Load `aot-debugger/` vertical  
+   - `backend='aot_*'` → Load `aot-debugger/` vertical
    - `backend='inductor'` → Load `inductor-debugger/` vertical
 4. **Debug with stage skill** using targeted TORCH_LOGS
 5. **Verify fix** by running bisector again

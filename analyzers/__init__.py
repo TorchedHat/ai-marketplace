@@ -1,17 +1,16 @@
 """Analyzers for torch.compile debug output across all pipeline stages."""
 
 # Dynamo stage parsers
-from analyzers.dynamo_parsers import (
-    parse_fx_graph,
-    parse_graph_breaks,
-    parse_pre_grad_passes,
-)
-
 # AOT stage parsers
 from analyzers.aot_parsers import (
     parse_aot_graphs,
     parse_aot_joint_graph,
     parse_post_grad_passes,
+)
+from analyzers.dynamo_parsers import (
+    parse_fx_graph,
+    parse_graph_breaks,
+    parse_pre_grad_passes,
 )
 
 # Inductor stage parsers

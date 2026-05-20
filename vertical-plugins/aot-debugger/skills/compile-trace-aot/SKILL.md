@@ -141,17 +141,17 @@ graph():
     # Forward inputs (primals)
     %arg0 : Tensor = placeholder[target=arg0]
     %arg1 : Tensor = placeholder[target=arg1]
-    
+
     # Forward computation
     %mul : Tensor = call_function[target=aten.mul](args = (%arg0, 2))
     %add : Tensor = call_function[target=aten.add](args = (%mul, %arg1))
-    
+
     # Backward inputs (tangents)
     %tangent : Tensor = placeholder[target=tangent]
-    
+
     # Backward computation
     %mul_grad : Tensor = call_function[target=aten.mul](args = (%tangent, 2))
-    
+
     # Outputs: forward results + gradients
     return (add, mul_grad)
 ```
@@ -243,7 +243,7 @@ grep "mul_\|add_\|sub_" /tmp/torchinductor_$USER/model__*__forward_0.py
 
 **Joint Graph** = Forward + Backward traced together in single FX graph
 
-**Purpose**: 
+**Purpose**:
 - Trace backward pass via autograd.grad()
 - Identify what to save for backward
 - Enable cross-stage optimizations
@@ -285,7 +285,7 @@ Tangents (grad outputs) → Backward computation → Gradients
 
 ### What Partitioning Does
 
-**Input**: Joint graph (forward + backward)  
+**Input**: Joint graph (forward + backward)
 **Output**: Separate forward and backward graphs
 
 **Strategies**:
@@ -349,7 +349,7 @@ diff <(grep "call_function" joint.py | grep "is_forward") \
 
 ### When They Run
 
-**After**: Partitioning  
+**After**: Partitioning
 **Before**: Inductor lowering
 
 **On**: Both forward and backward graphs separately
@@ -425,13 +425,13 @@ TORCH_LOGS="post_grad_graphs" python script.py
    loss = model(x)
    loss.backward()
    grad_eager = x.grad.clone()
-   
+
    # Compiled
    model_compiled = torch.compile(model)
    loss = model_compiled(x)
    loss.backward()
    grad_compiled = x.grad.clone()
-   
+
    torch.testing.assert_close(grad_eager, grad_compiled)
    ```
 
@@ -469,7 +469,7 @@ TORCH_LOGS="post_grad_graphs" python script.py
    from torch._functorch.aot_autograd import aot_function
    from functools import partial
    from functorch.compile import min_cut_rematerialization_partition
-   
+
    # Use min-cut partitioner for memory optimization
    # (Usually automatic, but can force via config)
    ```
@@ -610,7 +610,7 @@ TORCH_LOGS="aot,aot_graphs,aot_joint_graph,post_grad_graphs" python script.py
 # View forward graph
 cat /tmp/torchinductor_$USER/model__*__forward_0.py
 
-# View backward graph  
+# View backward graph
 cat /tmp/torchinductor_$USER/model__*__backward_0.py
 
 # View joint graph (if logged)

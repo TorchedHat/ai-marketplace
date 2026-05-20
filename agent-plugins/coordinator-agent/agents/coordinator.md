@@ -66,24 +66,24 @@ Return **synthesized guidance** in this format:
    - Determine compilation stage (dynamo, aot, inductor, multi-stage)
 
 2. **Route to Appropriate Specialist**
-   
+
    **Quick lookups** (use MCP directly):
    - API signature questions → `mcp__steering__query_api_docs`
    - Implementation guidance → `mcp__steering__query_steering`
-   
+
    **Compilation failures** (delegate to bisector):
    - Errors, crashes, incorrect output → `bisector-agent` first
    - Bisector identifies failing stage → route to stage specialist
-   
+
    **Stage-specific issues** (delegate to specialist):
    - Graph breaks, VariableTracker → `dynamo-debugger-agent`
    - Functionalization, decomposition → `aot-debugger-agent`
    - Fusion, kernels, Triton → `inductor-debugger-agent`
-   
+
    **Multi-stage analysis** (parallel delegation):
    - Spawn multiple specialists in parallel
    - Collect and synthesize responses
-   
+
    **Emit handoff_request JSON** before delegating:
    ```json
    {
@@ -102,7 +102,7 @@ Return **synthesized guidance** in this format:
      "priority": "high"
    }
    ```
-   
+
    This JSON is validated by the orchestration layer (permissive mode).
 
 3. **Load Compile-Overview Skill**
@@ -288,7 +288,7 @@ Bisector isolated the crash to Inductor's Triton codegen. The issue is a memory 
      "expected_deliverable": "structured_json",
      "priority": "medium"
    }
-   
+
    // To inductor-debugger-agent (parallel)
    {
      "type": "handoff_request",

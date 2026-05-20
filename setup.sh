@@ -15,7 +15,28 @@ SETTINGS="$HOME/.claude/settings.json"
 
 # 1. Install Python packages
 echo "📦 Installing Python packages..."
-uv pip install -q -e "$AI_TOOLING"
+cd "$AI_TOOLING"
+echo "   📦 Installing torch-compile-ai with dev dependencies..."
+uv pip install -q -e ".[dev]"
+
+# Install and configure pre-commit
+if command -v pre-commit &> /dev/null; then
+    echo "   🔧 Installing git pre-commit hooks..."
+    pre-commit install --install-hooks
+    echo "   ✓ Pre-commit hooks installed"
+
+    # Run pre-commit on all files to ensure everything is clean
+    echo "   🧪 Running pre-commit checks..."
+    if pre-commit run --all-files 2>&1 | tail -1 | grep -q "Passed"; then
+        echo "   ✓ All pre-commit checks passed"
+    else
+        echo "   ⚠️  Some pre-commit checks need attention (non-blocking)"
+    fi
+else
+    echo "   ⚠️  pre-commit not available (dev dependencies may not be installed)"
+fi
+
+cd "$WORKSPACES"
 
 # Install acp-steering-mcp from GitHub
 if ! command -v acp-steering-mcp &> /dev/null; then
@@ -73,7 +94,32 @@ EOF
 echo "   ✓ Settings written to $SETTINGS"
 echo "   ℹ️  MCP servers configured in .mcp.json (project-local)"
 
-# 5. Verify setup
+# 5. Create skill symlinks
+echo "🔗 Creating skill symlinks..."
+CLAUDE_SKILLS="$WORKSPACES/.claude/skills"
+mkdir -p "$CLAUDE_SKILLS"
+
+# Remove old symlinks if they exist
+rm -f "$CLAUDE_SKILLS/compile-bisect"
+rm -f "$CLAUDE_SKILLS/compile-overview"
+rm -f "$CLAUDE_SKILLS/compile-trace-aot"
+rm -f "$CLAUDE_SKILLS/compile-trace-dynamo"
+rm -f "$CLAUDE_SKILLS/compile-trace-inductor"
+rm -f "$CLAUDE_SKILLS/pytorch-dynamo"
+rm -f "$CLAUDE_SKILLS/pytorch-inductor"
+
+# Create new symlinks
+ln -s "$AI_TOOLING/vertical-plugins/bisector/skills/compile-bisect" "$CLAUDE_SKILLS/compile-bisect"
+ln -s "$AI_TOOLING/coordinator/skills/compile-overview" "$CLAUDE_SKILLS/compile-overview"
+ln -s "$AI_TOOLING/vertical-plugins/aot-debugger/skills/compile-trace-aot" "$CLAUDE_SKILLS/compile-trace-aot"
+ln -s "$AI_TOOLING/vertical-plugins/dynamo-debugger/skills/compile-trace-dynamo" "$CLAUDE_SKILLS/compile-trace-dynamo"
+ln -s "$AI_TOOLING/vertical-plugins/inductor-debugger/skills/compile-trace-inductor" "$CLAUDE_SKILLS/compile-trace-inductor"
+ln -s "$AI_TOOLING/vertical-plugins/dynamo-debugger/skills/pytorch-dynamo" "$CLAUDE_SKILLS/pytorch-dynamo"
+ln -s "$AI_TOOLING/vertical-plugins/inductor-debugger/skills/pytorch-inductor" "$CLAUDE_SKILLS/pytorch-inductor"
+
+echo "   ✓ Created 7 skill symlinks in $CLAUDE_SKILLS"
+
+# 7. Verify setup
 echo "✅ Verifying setup..."
 
 # Check Python packages
@@ -93,16 +139,19 @@ INDUCTOR_FUNCS=$(cat "$INDICES/inductor/steering.json" | grep -o '"functions": [
 
 echo "   ✓ acp-steering-mcp: $(which acp-steering-mcp)"
 echo "   ✓ repomap: $(which repomap)"
+echo "   ✓ pre-commit: $(which pre-commit 2>/dev/null || echo 'not installed')"
 echo "   ✓ Dynamo index: $DYNAMO_FUNCS functions"
 echo "   ✓ Inductor index: $INDUCTOR_FUNCS functions"
 echo "   ✓ Claude settings: $SETTINGS"
 echo "   ✓ MCP servers: $WORKSPACES/.mcp.json"
+echo "   ✓ Skills: $(ls -1 $CLAUDE_SKILLS | wc -l) symlinks created"
 
-# 6. Test MCP servers
+# 8. Test MCP servers
 echo "🧪 Testing MCP servers..."
 
-# Test debug-tracer server
-if python "$AI_TOOLING/server.py" <<< '{"jsonrpc":"2.0","method":"tools/list","id":1}' 2>/dev/null | grep -q "parse_dynamo_guards"; then
+# Test torch-compile-ai server
+if python "$AI_TOOLING/server.py" <<< '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}
+{"jsonrpc":"2.0","method":"tools/list","id":2}' 2>/dev/null | grep -q "parse_graph_breaks"; then
     echo "   ✓ torch-compile-ai responding"
 else
     echo "   ⚠️  torch-compile-ai not responding (might be expected in non-interactive mode)"
@@ -117,6 +166,8 @@ echo "📊 Summary:"
 echo "   • MCP Servers: debug-tracer, steering (in .mcp.json)"
 echo "   • Indices: dynamo ($DYNAMO_FUNCS funcs), inductor ($INDUCTOR_FUNCS funcs)"
 echo "   • Settings: $SETTINGS"
+echo "   • Skills: 7 torch.compile debugging skills linked"
+echo "   • Pre-commit: Ruff linter/formatter + pytest hooks enabled"
 echo "   • Prompts: $AI_TOOLING/prompts/"
 echo ""
 echo "🚀 Next Steps:"
