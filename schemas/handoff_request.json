@@ -11,12 +11,12 @@
     },
     "from_agent": {
       "type": "string",
-      "enum": ["coordinator-agent", "dynamo-expert-agent", "inductor-expert-agent", "aot-debugger-agent", "bisector-agent"],
+      "enum": ["coordinator-agent", "dynamo-debugger-agent", "inductor-debugger-agent", "aot-debugger-agent", "bisector-agent"],
       "description": "Agent initiating handoff"
     },
     "to_agent": {
       "type": "string",
-      "enum": ["coordinator-agent", "dynamo-expert-agent", "inductor-expert-agent", "aot-debugger-agent", "bisector-agent"],
+      "enum": ["coordinator-agent", "dynamo-debugger-agent", "inductor-debugger-agent", "aot-debugger-agent", "bisector-agent"],
       "description": "Target agent for task"
     },
     "task": {

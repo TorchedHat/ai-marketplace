@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Dynamo Expert Response",
-  "description": "Structured response schema for dynamo-expert-agent",
+  "title": "Dynamo Debugger Response",
+  "description": "Structured response schema for dynamo-debugger-agent",
   "type": "object",
   "required": ["specialist", "version", "task", "confidence", "insight", "files", "guidance"],
   "properties": {
     "specialist": {
-      "const": "dynamo-expert-agent",
+      "const": "dynamo-debugger-agent",
       "description": "Agent identifier"
     },
     "version": {

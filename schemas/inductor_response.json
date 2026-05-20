@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Inductor Expert Response",
-  "description": "Structured response schema for inductor-expert-agent",
+  "title": "Inductor Debugger Response",
+  "description": "Structured response schema for inductor-debugger-agent",
   "type": "object",
   "required": ["specialist", "version", "task", "confidence", "insight", "files", "guidance"],
   "properties": {
     "specialist": {
-      "const": "inductor-expert-agent",
+      "const": "inductor-debugger-agent",
       "description": "Agent identifier"
     },
     "version": {

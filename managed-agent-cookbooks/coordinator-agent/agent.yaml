@@ -25,8 +25,8 @@ tools:
 
 # Agent-to-agent calls
 callable_agents:
-  - dynamo-expert-agent
-  - inductor-expert-agent
+  - dynamo-debugger-agent
+  - inductor-debugger-agent
   - aot-debugger-agent
   - bisector-agent
 

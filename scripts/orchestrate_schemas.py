@@ -9,13 +9,9 @@ import jsonschema
 
 
 # Mapping from agent name to response schema filename
-# Note: YAML files use "-debugger-agent" naming, schemas use "-expert-agent"
-# We support both for compatibility
 AGENT_TO_SCHEMA = {
-    "dynamo-expert-agent": "dynamo_response.json",
-    "dynamo-debugger-agent": "dynamo_response.json",  # Alias
-    "inductor-expert-agent": "inductor_response.json",
-    "inductor-debugger-agent": "inductor_response.json",  # Alias
+    "dynamo-debugger-agent": "dynamo_response.json",
+    "inductor-debugger-agent": "inductor_response.json",
     "aot-debugger-agent": "aot_response.json",
     "coordinator-agent": "coordinator_routing.json",
     "bisector-agent": "coordinator_routing.json",  # Uses same schema as coordinator

@@ -25,7 +25,7 @@ tools:
 # Agent-to-agent calls
 callable_agents:
   - coordinator-agent
-  - dynamo-expert-agent  # For handoffs when issue spans stages
+  - dynamo-debugger-agent  # For handoffs when issue spans stages
 
 # Deployment settings
 deployment:

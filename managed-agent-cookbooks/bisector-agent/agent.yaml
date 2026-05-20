@@ -23,9 +23,9 @@ tools:
 # Agent-to-agent calls
 callable_agents:
   - coordinator-agent
-  - dynamo-expert-agent
+  - dynamo-debugger-agent
   - aot-debugger-agent
-  - inductor-expert-agent
+  - inductor-debugger-agent
 
 # Deployment settings
 deployment:

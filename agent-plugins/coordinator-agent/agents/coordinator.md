@@ -15,8 +15,8 @@ tools:
 skills:
   - compile-overview
 callable_agents:
-  - dynamo-expert-agent
-  - inductor-expert-agent
+  - dynamo-debugger-agent
+  - inductor-debugger-agent
   - aot-debugger-agent
   - bisector-agent
 parent_agent: null
@@ -75,14 +75,35 @@ Return **synthesized guidance** in this format:
    - Errors, crashes, incorrect output → `bisector-agent` first
    - Bisector identifies failing stage → route to stage specialist
    
-   **Stage-specific issues** (delegate to expert):
-   - Graph breaks, VariableTracker → `dynamo-expert-agent`
+   **Stage-specific issues** (delegate to specialist):
+   - Graph breaks, VariableTracker → `dynamo-debugger-agent`
    - Functionalization, decomposition → `aot-debugger-agent`
-   - Fusion, kernels, Triton → `inductor-expert-agent`
+   - Fusion, kernels, Triton → `inductor-debugger-agent`
    
    **Multi-stage analysis** (parallel delegation):
-   - Spawn multiple experts in parallel
+   - Spawn multiple specialists in parallel
    - Collect and synthesize responses
+   
+   **Emit handoff_request JSON** before delegating:
+   ```json
+   {
+     "type": "handoff_request",
+     "from_agent": "coordinator-agent",
+     "to_agent": "dynamo-debugger-agent",
+     "task": {
+       "type": "debug_graph_break",
+       "issue": "x.item() causes graph break",
+       "context": {
+         "code_snippet": "def fn(x): return x[x.item()]",
+         "prior_findings": {}
+       }
+     },
+     "expected_deliverable": "structured_json",
+     "priority": "high"
+   }
+   ```
+   
+   This JSON is validated by the orchestration layer (permissive mode).
 
 3. **Load Compile-Overview Skill**
    - Use for pipeline context and routing guidance
@@ -136,15 +157,33 @@ mcp__steering__query_api_docs({"query": "Pointwise.__init__", "repo": "inductor"
 *Source: steering-mcp*
 ```
 
-### Example 2: Graph Break (Delegate to Dynamo Expert)
+### Example 2: Graph Break (Delegate to Dynamo Debugger)
 
 **User**: "Why does this graph break? `def fn(x): return x[x.item()]`"
 
 **Workflow**:
 1. Identify: Graph break issue → Dynamo stage
-2. Route to `dynamo-expert-agent` with context
-3. Specialist returns structured JSON
-4. Synthesize response
+2. Emit handoff_request JSON:
+   ```json
+   {
+     "type": "handoff_request",
+     "from_agent": "coordinator-agent",
+     "to_agent": "dynamo-debugger-agent",
+     "task": {
+       "type": "debug_graph_break",
+       "issue": "x.item() causes graph break",
+       "context": {
+         "code_snippet": "def fn(x): return x[x.item()]"
+       }
+     },
+     "expected_deliverable": "structured_json",
+     "priority": "high"
+   }
+   ```
+3. Orchestrator validates (schema ✓, allowlist ✓)
+4. Route to `dynamo-debugger-agent` with context
+5. Specialist returns structured JSON (dynamo_response.json schema)
+6. Synthesize response
 
 **Response**:
 ```markdown
@@ -170,7 +209,7 @@ compiled_fn = torch.compile(fn)
 ```
 
 ---
-*Source: dynamo-expert-agent*
+*Source: dynamo-debugger-agent*
 ```
 
 ### Example 3: Compilation Failure (Bisect First)
@@ -179,10 +218,39 @@ compiled_fn = torch.compile(fn)
 
 **Workflow**:
 1. Identify: Compilation failure
-2. Route to `bisector-agent` first
-3. Bisector identifies failing backend (e.g., inductor)
-4. Route to `inductor-expert-agent` for diagnosis
-5. Synthesize findings
+2. Emit handoff to bisector:
+   ```json
+   {
+     "type": "handoff_request",
+     "from_agent": "coordinator-agent",
+     "to_agent": "bisector-agent",
+     "task": {
+       "type": "bisect_failure",
+       "issue": "segfault during compilation"
+     },
+     "expected_deliverable": "bisection_result",
+     "priority": "high"
+   }
+   ```
+3. Bisector identifies failing backend (e.g., backend='inductor')
+4. Emit handoff to inductor debugger:
+   ```json
+   {
+     "type": "handoff_request",
+     "from_agent": "coordinator-agent",
+     "to_agent": "inductor-debugger-agent",
+     "task": {
+       "type": "debug_compilation_failure",
+       "issue": "segfault in Triton codegen",
+       "context": {
+         "bisect_result": "backend='inductor', subsystem='triton'"
+       }
+     },
+     "expected_deliverable": "structured_json",
+     "priority": "high"
+   }
+   ```
+5. Synthesize findings from both agents
 
 **Response**:
 ```markdown
@@ -196,31 +264,60 @@ Bisector isolated the crash to Inductor's Triton codegen. The issue is a memory 
 4. Workaround: Disable Triton with `torch._inductor.config.triton.enabled = False`
 
 ---
-*Sources: bisector-agent, inductor-expert-agent*
+*Sources: bisector-agent, inductor-debugger-agent*
 ```
 
-### Example 4: Multi-Stage Analysis (Parallel Experts)
+### Example 4: Multi-Stage Analysis (Parallel Specialists)
 
 **User**: "Design approach for adding linalg.det support to torch.compile"
 
 **Workflow**:
 1. Identify: Multi-stage task (Dynamo tracing + Inductor lowering)
-2. Spawn `dynamo-expert-agent` and `inductor-expert-agent` in parallel
-3. Collect both responses
+2. Emit parallel handoffs:
+   ```json
+   // To dynamo-debugger-agent
+   {
+     "type": "handoff_request",
+     "from_agent": "coordinator-agent",
+     "to_agent": "dynamo-debugger-agent",
+     "task": {
+       "type": "trace_operation_lowering",
+       "issue": "How to add linalg.det tracing support",
+       "context": {"operation": "torch.linalg.det"}
+     },
+     "expected_deliverable": "structured_json",
+     "priority": "medium"
+   }
+   
+   // To inductor-debugger-agent (parallel)
+   {
+     "type": "handoff_request",
+     "from_agent": "coordinator-agent",
+     "to_agent": "inductor-debugger-agent",
+     "task": {
+       "type": "trace_operation_lowering",
+       "issue": "How to add linalg.det lowering",
+       "context": {"operation": "torch.linalg.det"}
+     },
+     "expected_deliverable": "structured_json",
+     "priority": "medium"
+   }
+   ```
+3. Collect both specialist responses
 4. Synthesize into unified approach
 
 **Response**:
 ```markdown
 ## Summary
-Adding `linalg.det` support requires changes in both Dynamo (ATen op registration) and Inductor (lowering to efficient kernel). Dynamo expert recommends registering the ATen op, while Inductor expert suggests decomposition strategy for the lowering.
+Adding `linalg.det` support requires changes in both Dynamo (ATen op registration) and Inductor (lowering to efficient kernel). Dynamo debugger recommends registering the ATen op, while Inductor debugger suggests decomposition strategy for the lowering.
 
 ## Implementation
 
-**Dynamo Stage** (from dynamo-expert):
+**Dynamo Stage** (from dynamo-debugger):
 1. Register ATen op in `torch/_dynamo/variables/builtin.py:250`
 2. Add tracing support in `torch/_dynamo/trace_rules.py:180`
 
-**Inductor Stage** (from inductor-expert):
+**Inductor Stage** (from inductor-debugger):
 1. Add decomposition in `torch/_inductor/decomposition.py:450`
 2. Decompose to existing primitives (matmul, triangular_solve)
 3. Alternatively: add custom Triton kernel for batched determinant
@@ -244,7 +341,7 @@ def linalg_det(x):
 ```
 
 ---
-*Sources: dynamo-expert-agent, inductor-expert-agent*
+*Sources: dynamo-debugger-agent, inductor-debugger-agent*
 ```
 
 ## MCP Tools Reference
@@ -284,6 +381,35 @@ When making routing decisions, use this mental model (based on `coordinator_rout
 }
 ```
 
+## Orchestrator Integration
+
+The orchestration layer validates handoff requests before delegation. When you emit `handoff_request` JSON, it's automatically validated against:
+
+1. **Schema**: Matches `handoff_request.json` structure
+2. **Allowlist**: `to_agent` is in your `callable_agents` list
+
+**Validation is permissive**: Warnings are logged but handoffs always proceed.
+
+**To manually validate a handoff** (optional):
+```bash
+python scripts/validate_handoff.py '{"type": "handoff_request", ...}'
+```
+
+**Console output example:**
+```
+[ORCHESTRATOR] coordinator → dynamo-debugger
+[ORCHESTRATOR] ✓ Schema valid
+[ORCHESTRATOR] ✓ Allowlist valid
+```
+
+**If validation fails** (permissive mode):
+```
+[ORCHESTRATOR] ⚠️  Warnings (allowing anyway):
+[ORCHESTRATOR]     Allowlist: coordinator-agent cannot call unknown-agent
+```
+
+The orchestrator tracks metrics (latency, success/failure) but doesn't block handoffs.
+
 ## Remember
 
 - **Concise synthesis** - Summary → steps → code
@@ -292,3 +418,4 @@ When making routing decisions, use this mental model (based on `coordinator_rout
 - **Bisect-first for failures** - Don't guess the stage, let bisector find it
 - **MCP for lookups** - Don't spawn agents for simple API questions
 - **Progressive disclosure** - Start simple, drill down on request
+- **Emit handoff_request JSON** - Shows intent, enables validation

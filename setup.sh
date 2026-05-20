@@ -6,11 +6,11 @@ set -e
 
 echo "🚀 Setting up Multi-Agent Development System..."
 
-# Paths (everything in /workspaces/ to persist)
+# Paths
 WORKSPACES="/workspaces/pytorch-devcontainers"
-AI_TOOLING="$WORKSPACES/ai-tooling/torch-compile-ai"
+AI_TOOLING="$WORKSPACES/torch-compile-ai"
 PYTORCH_SRC="$WORKSPACES/pytorch"
-INDICES="$WORKSPACES/ai-tooling/.acp-indices"
+INDICES="$HOME/.acp/repos"  # Standard acp-steering location
 SETTINGS="$HOME/.claude/settings.json"
 
 # 1. Install Python packages
@@ -43,7 +43,6 @@ if [ "$STEERING_AVAILABLE" = true ]; then
         echo "🔍 Indexing torch._dynamo (this takes ~2-3 minutes)..."
         cd "$PYTORCH_SRC"
         repomap ./torch/_dynamo --repo-name dynamo --verbose > /dev/null 2>&1
-        mv ~/.acp/repos/dynamo "$INDICES/"
         echo "   ✓ Dynamo indexed: $(cat "$INDICES/dynamo/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*') functions"
     else
         echo "   ✓ Dynamo index exists"
@@ -53,7 +52,6 @@ if [ "$STEERING_AVAILABLE" = true ]; then
         echo "🔍 Indexing torch._inductor (this takes ~5-8 minutes)..."
         cd "$PYTORCH_SRC"
         repomap ./torch/_inductor --repo-name inductor --verbose > /dev/null 2>&1
-        mv ~/.acp/repos/inductor "$INDICES/"
         echo "   ✓ Inductor indexed: $(cat "$INDICES/inductor/steering.json" | grep -o '"functions": [0-9]*' | grep -o '[0-9]*') functions"
     else
         echo "   ✓ Inductor index exists"
@@ -62,56 +60,18 @@ else
     echo "   ⏭️  Skipping PyTorch indexing (steering not available)"
 fi
 
-# 4. Configure MCP servers
-echo "⚙️  Configuring MCP servers..."
+# 4. Configure Claude settings (preferences only, MCP in .mcp.json)
+echo "⚙️  Configuring Claude settings..."
 mkdir -p "$HOME/.claude"
 
-# Build settings.json with conditional steering
-if [ "$STEERING_AVAILABLE" = true ]; then
-    cat > "$SETTINGS" << EOF
+cat > "$SETTINGS" << EOF
 {
-  "skipDangerousModePermissionPrompt": true,
-  "mcpServers": {
-    "steering": {
-      "command": "acp-steering-mcp",
-      "env": {
-        "STEERING_REPOS_PATH": "$INDICES"
-      }
-    },
-    "debug-tracer": {
-      "command": "python",
-      "args": [
-        "$AI_TOOLING/server.py"
-      ],
-      "cwd": "$AI_TOOLING",
-      "env": {
-        "PYTHONPATH": "$AI_TOOLING"
-      }
-    }
-  }
+  "skipDangerousModePermissionPrompt": true
 }
 EOF
-else
-    cat > "$SETTINGS" << EOF
-{
-  "skipDangerousModePermissionPrompt": true,
-  "mcpServers": {
-    "debug-tracer": {
-      "command": "python",
-      "args": [
-        "$AI_TOOLING/server.py"
-      ],
-      "cwd": "$AI_TOOLING",
-      "env": {
-        "PYTHONPATH": "$AI_TOOLING"
-      }
-    }
-  }
-}
-EOF
-fi
 
 echo "   ✓ Settings written to $SETTINGS"
+echo "   ℹ️  MCP servers configured in .mcp.json (project-local)"
 
 # 5. Verify setup
 echo "✅ Verifying setup..."
@@ -135,7 +95,8 @@ echo "   ✓ acp-steering-mcp: $(which acp-steering-mcp)"
 echo "   ✓ repomap: $(which repomap)"
 echo "   ✓ Dynamo index: $DYNAMO_FUNCS functions"
 echo "   ✓ Inductor index: $INDUCTOR_FUNCS functions"
-echo "   ✓ MCP config: $SETTINGS"
+echo "   ✓ Claude settings: $SETTINGS"
+echo "   ✓ MCP servers: $WORKSPACES/.mcp.json"
 
 # 6. Test MCP servers
 echo "🧪 Testing MCP servers..."
@@ -153,9 +114,9 @@ echo "✅ Multi-Agent System Setup Complete!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "📊 Summary:"
-echo "   • MCP Servers: debug-tracer, steering"
+echo "   • MCP Servers: debug-tracer, steering (in .mcp.json)"
 echo "   • Indices: dynamo ($DYNAMO_FUNCS funcs), inductor ($INDUCTOR_FUNCS funcs)"
-echo "   • Config: $SETTINGS"
+echo "   • Settings: $SETTINGS"
 echo "   • Prompts: $AI_TOOLING/prompts/"
 echo ""
 echo "🚀 Next Steps:"

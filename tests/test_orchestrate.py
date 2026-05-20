@@ -46,8 +46,8 @@ class TestAllowlistBuilder:
         allowlist = build_allowlist(MANIFEST_DIR)
 
         coordinator_callables = allowlist["coordinator-agent"]
-        assert "dynamo-debugger-agent" in coordinator_callables or "dynamo-expert-agent" in coordinator_callables
-        assert "inductor-debugger-agent" in coordinator_callables or "inductor-expert-agent" in coordinator_callables
+        assert "dynamo-debugger-agent" in coordinator_callables
+        assert "inductor-debugger-agent" in coordinator_callables
         assert "aot-debugger-agent" in coordinator_callables
         assert "bisector-agent" in coordinator_callables
 
@@ -69,7 +69,7 @@ class TestAllowlistValidation:
         allowlist = build_allowlist(MANIFEST_DIR)
         handoff = {
             "from_agent": "coordinator-agent",
-            "to_agent": "dynamo-expert-agent",
+            "to_agent": "dynamo-debugger-agent",
         }
 
         valid, error = validate_handoff_allowlist(handoff, allowlist)
@@ -92,7 +92,7 @@ class TestAllowlistValidation:
     def test_invalid_handoff_unknown_agent(self):
         """Test validation with unknown agent."""
         allowlist = build_allowlist(MANIFEST_DIR)
-        handoff = {"from_agent": "unknown-agent", "to_agent": "dynamo-expert-agent"}
+        handoff = {"from_agent": "unknown-agent", "to_agent": "dynamo-debugger-agent"}
 
         valid, error = validate_handoff_allowlist(handoff, allowlist)
         assert valid is False
@@ -134,7 +134,7 @@ class TestHandoffValidation:
         handoff = {
             "type": "handoff_request",
             "from_agent": "coordinator-agent",
-            "to_agent": "dynamo-expert-agent",
+            "to_agent": "dynamo-debugger-agent",
             "task": {"type": "debug_graph_break", "issue": "test issue"},
             "expected_deliverable": "structured_json",
             "priority": "high",
@@ -165,7 +165,7 @@ class TestResponseValidation:
         """Test validation of valid dynamo expert response."""
         schemas = load_schemas(SCHEMA_DIR)
         response = {
-            "specialist": "dynamo-expert-agent",
+            "specialist": "dynamo-debugger-agent",
             "version": "1.0.0",
             "task": "test task",
             "confidence": "high",
@@ -180,7 +180,7 @@ class TestResponseValidation:
             "skill_references": [],
         }
 
-        valid, errors = validate_response(response, "dynamo-expert-agent", schemas)
+        valid, errors = validate_response(response, "dynamo-debugger-agent", schemas)
         assert valid is True
         assert errors == []
 
@@ -188,11 +188,11 @@ class TestResponseValidation:
         """Test validation of response missing required field."""
         schemas = load_schemas(SCHEMA_DIR)
         response = {
-            "specialist": "dynamo-expert-agent",
+            "specialist": "dynamo-debugger-agent",
             # Missing many required fields
         }
 
-        valid, errors = validate_response(response, "dynamo-expert-agent", schemas)
+        valid, errors = validate_response(response, "dynamo-debugger-agent", schemas)
         assert valid is False
         assert len(errors) > 0
 
@@ -223,7 +223,7 @@ class TestOrchestrator:
         handoff = {
             "type": "handoff_request",
             "from_agent": "coordinator-agent",
-            "to_agent": "dynamo-expert-agent",
+            "to_agent": "dynamo-debugger-agent",
             "task": {"type": "debug_graph_break", "issue": "test"},
             "expected_deliverable": "structured_json",
             "priority": "high",
@@ -248,7 +248,7 @@ class TestOrchestrator:
         # Invalid: dynamo expert cannot call bisector
         handoff = {
             "type": "handoff_request",
-            "from_agent": "dynamo-expert-agent",
+            "from_agent": "dynamo-debugger-agent",
             "to_agent": "bisector-agent",
             "task": {"type": "bisect_failure", "issue": "test"},
             "expected_deliverable": "bisection_result",
@@ -274,14 +274,14 @@ class TestOrchestrator:
 
         orchestrator.log_handoff(
             from_agent="coordinator-agent",
-            to_agent="dynamo-expert-agent",
+            to_agent="dynamo-debugger-agent",
             latency_ms=125.0,
             success=True,
             warnings=[],
         )
 
         captured = capsys.readouterr()
-        assert "coordinator → dynamo-expert (125ms) ✓" in captured.out
+        assert "coordinator → dynamo-debugger (125ms) ✓" in captured.out
 
 
 class TestPermissiveMode:
@@ -317,7 +317,7 @@ class TestPermissiveMode:
         # Not in allowlist
         handoff = {
             "type": "handoff_request",
-            "from_agent": "dynamo-expert-agent",
+            "from_agent": "dynamo-debugger-agent",
             "to_agent": "bisector-agent",
             "task": {"type": "test", "issue": "test"},
             "expected_deliverable": "structured_json",
