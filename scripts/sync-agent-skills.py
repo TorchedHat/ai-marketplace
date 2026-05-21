@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Sync skills from vertical-plugins/ to agent-plugins/ bundles.
+"""Symlink skills from vertical-plugins/ to agent-plugins/ bundles.
+
+Creates symlinks to ensure single source of truth in vertical-plugins/.
 
 Validates:
-- No drift between source and synced copies
-- YAML frontmatter is valid
+- Symlinks point to valid skill directories
+- YAML frontmatter is valid in source skills
 - Cross-references resolve
 - No circular dependencies
 """
@@ -20,7 +22,7 @@ SKILL_MAPPINGS = {
     "coordinator-agent": ["compile-overview"],
     "dynamo-debugger-agent": ["pytorch-dynamo", "compile-trace-dynamo"],
     "inductor-debugger-agent": ["pytorch-inductor", "compile-trace-inductor"],
-    "aot-debugger-agent": ["compile-trace-aot"],
+    "aot-debugger-agent": ["pytorch-aot", "compile-trace-aot"],
     "bisector-agent": ["compile-bisect"],
 }
 
@@ -44,18 +46,21 @@ def find_skill_source(skill_name: str) -> Path:
 
 
 def sync_skill(source: Path, dest: Path) -> bool:
-    """Sync skill from source to dest, return True if changed."""
-    if dest.exists():
-        # Check if up-to-date
-        source_mtime = source.stat().st_mtime
-        dest_mtime = dest.stat().st_mtime
-        if source_mtime <= dest_mtime:
-            return False  # Dest is current
+    """Create symlink from dest to source, return True if changed."""
+    # Remove existing file/dir/link
+    if dest.exists() or dest.is_symlink():
+        if dest.is_symlink():
+            # Check if already pointing to correct source
+            if dest.resolve() == source.resolve():
+                return False  # Already correct symlink
+        # Remove old copy or incorrect symlink
+        if dest.is_dir() and not dest.is_symlink():
+            shutil.rmtree(dest)
+        else:
+            dest.unlink()
 
-    # Sync
-    if dest.exists():
-        shutil.rmtree(dest)
-    shutil.copytree(source, dest, symlinks=True)
+    # Create symlink
+    dest.symlink_to(source)
     return True
 
 
@@ -84,8 +89,8 @@ def validate_skill(skill_path: Path) -> list[str]:
 
 
 def main():
-    """Sync all skills and validate."""
-    print("Syncing skills from vertical-plugins/ to agent-plugins/...\n")
+    """Create skill symlinks and validate."""
+    print("Creating skill symlinks from vertical-plugins/ to agent-plugins/...\n")
 
     changed_count = 0
     errors = []
@@ -101,7 +106,7 @@ def main():
                 dest = agent_dir / skill_name
 
                 changed = sync_skill(source, dest)
-                status = "✓ synced" if changed else "✓ current"
+                status = "✓ symlinked" if changed else "✓ current"
                 print(f"  {skill_name}: {status}")
 
                 if changed:
@@ -117,7 +122,7 @@ def main():
         print()
 
     # Report
-    print(f"\nSummary: {changed_count} skills updated")
+    print(f"\nSummary: {changed_count} symlinks created/updated")
 
     if errors:
         print(f"\n❌ {len(errors)} validation errors:")
@@ -125,7 +130,7 @@ def main():
             print(f"  - {error}")
         return 1
     else:
-        print("✅ All skills valid")
+        print("✅ All symlinks created and skills valid")
         return 0
 
 

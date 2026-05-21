@@ -115,7 +115,7 @@ else
     echo "   ⚠️  $AI_TOOLING/.mcp.json not found"
 fi
 
-# 5b. Symlink skills
+# 5b. Symlink skills to .claude/skills
 CLAUDE_SKILLS="$WORKSPACES/.claude/skills"
 mkdir -p "$CLAUDE_SKILLS"
 
@@ -127,7 +127,7 @@ find "$CLAUDE_SKILLS" -type l | while read link; do
     fi
 done
 
-# Discover and symlink all skills from vertical-plugins and coordinator
+# Discover and symlink all skills from vertical-plugins and coordinator to .claude/skills
 SKILL_COUNT=0
 for skill_dir in "$AI_TOOLING"/vertical-plugins/*/skills/* "$AI_TOOLING"/coordinator/skills/*; do
     if [ -d "$skill_dir" ] && ([ -f "$skill_dir/SKILL.md" ] || [ -f "$skill_dir/SKILL.yaml" ]); then
@@ -138,7 +138,56 @@ for skill_dir in "$AI_TOOLING"/vertical-plugins/*/skills/* "$AI_TOOLING"/coordin
     fi
 done
 
-echo "   ✓ Created $SKILL_COUNT skill symlinks"
+echo "   ✓ Created $SKILL_COUNT skill symlinks to .claude/skills"
+
+# 5c. Symlink skills to agent-plugins (single source of truth from vertical-plugins)
+echo "   🔗 Symlinking skills to agent-plugins..."
+AGENT_SKILL_COUNT=0
+
+# Skill mappings: agent-name -> skill-names
+declare -A SKILL_MAPPINGS=(
+    ["coordinator-agent"]="compile-overview"
+    ["dynamo-debugger-agent"]="pytorch-dynamo compile-trace-dynamo"
+    ["inductor-debugger-agent"]="pytorch-inductor compile-trace-inductor"
+    ["aot-debugger-agent"]="pytorch-aot compile-trace-aot"
+    ["bisector-agent"]="compile-bisect"
+)
+
+for agent_name in "${!SKILL_MAPPINGS[@]}"; do
+    agent_skills_dir="$AI_TOOLING/agent-plugins/$agent_name/skills"
+    mkdir -p "$agent_skills_dir"
+
+    # Remove old copies/symlinks
+    if [ -d "$agent_skills_dir" ]; then
+        rm -rf "$agent_skills_dir"/*
+    fi
+
+    for skill_name in ${SKILL_MAPPINGS[$agent_name]}; do
+        # Find skill source in vertical-plugins or coordinator
+        skill_source=""
+        if [ "$skill_name" = "compile-overview" ]; then
+            skill_source="$AI_TOOLING/coordinator/skills/$skill_name"
+        else
+            # Search in vertical-plugins
+            for vertical_dir in "$AI_TOOLING"/vertical-plugins/*; do
+                candidate="$vertical_dir/skills/$skill_name"
+                if [ -d "$candidate" ]; then
+                    skill_source="$candidate"
+                    break
+                fi
+            done
+        fi
+
+        if [ -n "$skill_source" ] && [ -d "$skill_source" ]; then
+            ln -s "$skill_source" "$agent_skills_dir/$skill_name"
+            AGENT_SKILL_COUNT=$((AGENT_SKILL_COUNT + 1))
+        else
+            echo "   ⚠️  Skill not found: $skill_name for $agent_name"
+        fi
+    done
+done
+
+echo "   ✓ Created $AGENT_SKILL_COUNT skill symlinks to agent-plugins"
 
 # 6. Verify setup
 echo "✅ Verifying setup..."

@@ -91,10 +91,10 @@ Skills are organized by **compilation stage** rather than file type:
 - Each compilation stage's components grouped together
 - Clear boundaries between Dynamo, AOT, Inductor concerns
 - Easy to see what belongs to each stage
-- Skills synced to agent bundles via automation
+- Skills symlinked to agent bundles (single source of truth)
 
 **Source of Truth:** `vertical-plugins/` and `coordinator/`
-**Agent Bundles:** `agent-plugins/*/skills/` (auto-synced)
+**Agent Bundles:** `agent-plugins/*/skills/` (symlinked from vertical-plugins)
 **Backward Compatibility:** `.claude/skills/` symlinks to vertical-plugins
 
 ### Agent Formalization (Phase 2)

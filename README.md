@@ -3,10 +3,10 @@
 Anthropic-pattern multi-agent debugging system for PyTorch compiler development.
 
 **Architecture:**
-- **Vertical Plugins** - Skills organized by compilation stage (Dynamo, AOT, Inductor)
-- **Agent Plugins** - Structured agents with manifests (coordinator, experts, bisector)
+- **Vertical Plugins** - Skills organized by compilation stage (Dynamo, AOT, Inductor) - **single source of truth**
+- **Agent Plugins** - Structured agents with manifests (coordinator, experts, bisector) - skills are symlinked from vertical plugins
 - **MCP Servers** - Debug output parsers + steering (PyTorch API documentation)
-- **Skill Sync** - Automated sync from vertical sources to agent bundles
+- **Skill Symlinks** - Agent plugin skills symlinked from vertical sources (single source of truth)
 
 **Features:**
 - 🔍 **Intelligent Routing** - Bisect-first workflow routes to stage-specific skills
@@ -136,7 +136,7 @@ torch-compile-ai/
 │   └── inductor_response.json
 │
 ├── scripts/                       # Automation (Phase 2)
-│   ├── sync-agent-skills.py       # Sync skills to agent bundles
+│   ├── sync-agent-skills.py       # Create symlinks from vertical-plugins to agent bundles
 │   └── validate-skills.py         # Lint and validate
 │
 ├── analyzers/                     # 9 MCP debug parsers (Python)
@@ -196,16 +196,18 @@ Steering provides context about when/how to use APIs, common patterns, and archi
 pytest tests/analyzers/ -v
 ```
 
-**Sync skills (Phase 2):**
+**Create/update skill symlinks (Phase 2):**
 ```bash
 python scripts/sync-agent-skills.py
 ```
+
+This creates symlinks from `agent-plugins/*/skills/` to `vertical-plugins/*/skills/`, ensuring a single source of truth.
 
 **Update agent prompts:**
 Edit `agent-plugins/*/agents/*.md` to adjust agent behavior
 
 **Update skills:**
-Edit `vertical-plugins/*/skills/*/` source files, then run sync script
+Edit `vertical-plugins/*/skills/*/` source files directly (symlinks ensure changes are visible everywhere)
 
 **Re-index after PyTorch updates:**
 ```bash
