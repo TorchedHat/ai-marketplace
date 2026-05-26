@@ -4,8 +4,6 @@
 
 Claude Code plugin for PyTorch torch.compile debugging. Provides 8 skills, 5 agents, and MCP server integration for semantic API search across Dynamo, AOT Autograd, and Inductor compilation stages.
 
-**Current Version**: Plugin-based architecture (migrated from symlink-based organization)
-
 ## Project Structure
 
 ```
@@ -43,24 +41,10 @@ torch-compile-ai/
 │
 ├── tests/                        # pytest tests
 │
-├── INSTALL.md                    # Installation guide
-├── README.md                     # User documentation
+├── README.md                     # User guide and installation
+├── REPO_ARCH.md                  # This file (architecture)
 └── CLAUDE.md                     # Code guidelines
 ```
-
-### Legacy Directories (Preserved for Reference)
-
-These directories contain the old organization but are **not used by the plugin**:
-
-```
-├── vertical-plugins/             # Old: Source organization by stage
-├── agent-plugins/                # Old: Agent bundles with symlinks
-├── coordinator/                  # Old: Coordinator vertical
-├── managed-agent-cookbooks/      # Old: Deployment manifests
-└── schemas/                      # Old: JSON schemas
-```
-
-These can be safely removed or kept for historical reference.
 
 ## Architecture
 
@@ -223,27 +207,12 @@ pytest tests/test_specific.py -v
 
 ### Updating Documentation
 
-After making changes, update:
-- `README.md` - User-facing documentation
-- `INSTALL.md` - Installation instructions
-- `REPO_ARCH.md` - This file (architecture)
-- `CLAUDE.md` - Code guidelines
+Documentation files:
+- `README.md` - User-facing documentation, installation, and troubleshooting
+- `REPO_ARCH.md` - This file (architecture, design principles, and development)
+- `CLAUDE.md` - Code guidelines and testing practices
 
-## Migration History
-
-### v1.0.0 - Plugin Architecture (Current)
-- ✅ Migrated from symlink-based to plugin-based
-- ✅ Removed setup.sh (replaced with SessionStart hook)
-- ✅ Removed all symlinks
-- ✅ Simplified to auto-discovery
-- ✅ Made fully portable (no hardcoded paths)
-
-### Previous - Symlink Architecture
-- Skills in `vertical-plugins/` as source of truth
-- Symlinks from `agent-plugins/*/skills/` to vertical plugins
-- Symlinks from `.claude/skills/` to vertical plugins
-- Manual `setup.sh` to create symlinks
-- Complex multi-directory organization
+Update these files when making structural changes or adding new skills/agents.
 
 ## Future Enhancements
 
