@@ -2,13 +2,11 @@
 
 ## Purpose
 
-MCP server for parsing torch.compile debug output. Provides 9 tools for analyzing FX graphs, fusion decisions, Triton codegen, and cross-stage transformations.
+Multi-agent system for PyTorch torch.compile development and debugging. Provides stage-specific skills, steering MCP server for API documentation, and structured agent definitions.
 
 **For architecture and repository structure, see [REPO_ARCH.md](REPO_ARCH.md)**.
 
 ## Code Guidelines
-
-**TDD**: All functions require a corresponding test. Python tests use Pytest. Follow Red-Green-Refactor phases.
 
 **Code Style**:
 
@@ -22,7 +20,7 @@ Python: ruff · pyright type checker · Google-style docstrings (no types in doc
 
 **Import Style**:
 - Avoid local imports
-- Use explicit module imports (e.g., `from analyzers.dynamo_parsers import parse_graph_breaks`)
+- Use explicit module imports
 - Import from modules, not package `__init__.py`
 
 **Documentation**:
@@ -37,56 +35,34 @@ Python: ruff · pyright type checker · Google-style docstrings (no types in doc
 - Use specific FileNotFoundError, ValueError, etc. instead of generic Exception
 
 **Code Organization**:
-- One test file per source file (tests/analyzers/test_dynamo_parsers.py for analyzers/dynamo_parsers.py)
-- Test classes named Test<FunctionName> (e.g., TestParseGraphBreaks)
+- One test file per source file
+- Test classes named Test<FunctionName>
 - Keep functions focused and under 200 lines
 
 ## Testing
 
-All parsers tested with realistic stdout/file content:
+Multi-agent scenarios and skill tests:
 
 ```bash
 # All tests
-pytest tests/analyzers/ -v
+pytest tests/ -v
 
-# Specific stage
-pytest tests/analyzers/test_dynamo_parsers.py -v
+# Specific tests
+pytest tests/multi-agent/ -v
 ```
 
 **Test Requirements**:
-- Use realistic stdout strings or file content (not synthetic data)
-- Mock only external dependencies (never mock internal functions)
+- Use realistic torch.compile output
+- Mock only external dependencies
 - Test both success and error cases
-- Verify output format and key information
 
 ## Design Decisions
 
-### Async Functions for Consistency
-All parsers are async (`async def`) even though most don't do I/O, for consistency with MCP async tool handlers.
+### Direct Log Interpretation
+Claude reads TORCH_LOGS output and debug files directly using skill guidance. No intermediate parsing - full context available for better analysis.
 
-### String Returns
-All parsers return formatted markdown strings (not JSON) for human-readable output in Claude conversations.
+### Skill-Based Architecture
+Skills provide structured guidance for debugging each compilation stage (Dynamo, AOT, Inductor) rather than automated parsing.
 
-### Content Strings, Not File Paths
-All parsers take content strings as input, never file paths. Caller is responsible for reading files.
-
-**Why:** Separates file I/O from parsing logic, makes testing easier, works with both stdout and files.
-
-### Test-First Development
-Write test before implementation to validate requirements and ensure testability.
-
-### Strong Typing Required
-All function signatures fully typed. No `Any` without justification. Use modern type hints (list vs List).
-
-### Simple, Focused Parsers
-Each parser does one thing: parse a specific type of torch.compile output. No multi-file analysis, no complex diff logic.
-
-**Removed complexity:**
-- Multi-file diff analysis (analyze_partitioning, analyze_lowering)
-- Cross-stage operation tracing (trace_operation, search_ir)
-- Complex mutation detection (analyze_functionalization)
-
-**Current approach:**
-- Simple single-file/stdout parsing
-- Clear mapping: 1 IR level = 1 parser
-- Content strings only
+### Steering MCP Integration
+API documentation and semantic search over PyTorch modules (dynamo, functorch, inductor) via steering MCP server.

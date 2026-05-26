@@ -222,12 +222,11 @@ echo "   ✓ Skills: $(ls -1 $CLAUDE_SKILLS | wc -l) symlinks created"
 # 7. Test MCP servers
 echo "🧪 Testing MCP servers..."
 
-# Test torch-compile-ai server (import test - MCP servers are designed for long-running sessions)
-if python -c "from analyzers import dynamo_parsers, aot_parsers, inductor_parsers" 2>/dev/null; then
-    echo "   ✓ torch-compile-ai server validated"
+# Test steering MCP server
+if command -v acp-steering-mcp &> /dev/null; then
+    echo "   ✓ steering MCP server available"
 else
-    echo "   ❌ torch-compile-ai server imports failed"
-    exit 1
+    echo "   ⚠️  steering MCP server not available"
 fi
 
 echo ""
@@ -236,7 +235,7 @@ echo "✅ Multi-Agent System Setup Complete!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "📊 Summary:"
-echo "   • MCP Servers: debug-tracer, steering (in .mcp.json)"
+echo "   • MCP Servers: steering (in .mcp.json)"
 echo "   • Indices: dynamo ($DYNAMO_FUNCS funcs), inductor ($INDUCTOR_FUNCS funcs), functorch ($FUNCTORCH_FUNCS funcs)"
 echo "   • Settings: $SETTINGS"
 echo "   • Skills: 7 torch.compile debugging skills linked"

@@ -5,7 +5,7 @@ Anthropic-pattern multi-agent debugging system for PyTorch compiler development.
 **Architecture:**
 - **Vertical Plugins** - Skills organized by compilation stage (Dynamo, AOT, Inductor) - **single source of truth**
 - **Agent Plugins** - Structured agents with manifests (coordinator, experts, bisector) - skills are symlinked from vertical plugins
-- **MCP Servers** - Debug output parsers + steering (PyTorch API documentation)
+- **MCP Server** - Steering (PyTorch API documentation and semantic search)
 - **Skill Symlinks** - Agent plugin skills symlinked from vertical sources (single source of truth)
 
 **Features:**
@@ -13,7 +13,6 @@ Anthropic-pattern multi-agent debugging system for PyTorch compiler development.
 - 📚 **Steering Integration** - Semantic search over PyTorch Dynamo/Inductor APIs
 - 🔄 **Skill Composition** - Implementation + tracing skills per stage
 - 🛠️ **Bisector Integration** - Automated failure isolation
-- 📋 **Debug Parsers** - 9 MCP tools for parsing TORCH_LOGS output
 
 ## Quick Start
 
@@ -41,8 +40,7 @@ cd /workspaces/pytorch-devcontainers/torch-compile-ai
 This script:
 - Installs pip packages (`acp-steering-mcp`, `torch-compile-ai`)
 - **Indexes PyTorch** (dynamo + inductor) for steering API documentation
-- Configures MCP servers in `~/.claude/settings.json`:
-  - `debug-tracer` - 9 parsers for TORCH_LOGS output
+- Configures MCP server in `.mcp.json`:
   - `steering` - Semantic search over PyTorch APIs
 
 ## Usage
@@ -84,6 +82,8 @@ What are the parameters for Pointwise.__init__?
 How do I use SymInt in C++ code?
 Show me the signature for torch._dynamo.variables.VariableTracker.call_method
 ```
+
+Skills guide Claude to read raw TORCH_LOGS output directly rather than using intermediate parsers.
 
 **Implementation work (uses pytorch-* skills):**
 ```
@@ -139,8 +139,6 @@ torch-compile-ai/
 │   ├── sync-agent-skills.py       # Create symlinks from vertical-plugins to agent bundles
 │   └── validate-skills.py         # Lint and validate
 │
-├── analyzers/                     # 9 MCP debug parsers (Python)
-├── server.py                      # MCP server: debug-tracer + steering
 └── tests/                         # pytest tests
 ```
 
@@ -151,22 +149,7 @@ torch-compile-ai/
 
 See **[REPO_ARCH.md](REPO_ARCH.md)** for detailed architecture.
 
-## MCP Servers
-
-### Debug Tracer (9 Parsers)
-
-Parses TORCH_LOGS output and debug artifacts:
-
-| Parser | Input | Output |
-|--------|-------|--------|
-| `parse_fx_graph` | `fx_graph_readable.py` | FX graph structure |
-| `parse_graph_breaks` | `TORCH_LOGS=graph_breaks` stdout | Break locations & reasons |
-| `parse_aot_joint_graph` | AOT joint graph file | Forward+backward graph |
-| `parse_aot_graphs` | AOT forward/backward files | Partitioned graphs |
-| `parse_post_grad_passes` | `TORCH_LOGS=post_grad_graphs` | Post-grad transformations |
-| `parse_fusion_decisions` | `TORCH_LOGS=fusion,schedule` | Fusion decisions |
-| `parse_ir_post_fusion` | `ir_post_fusion_*.txt` | LoopBody IR |
-| `parse_output_code` | `output_code.py` | Generated kernels |
+## MCP Server
 
 ### Steering (Semantic API Search)
 
@@ -193,7 +176,7 @@ Steering provides context about when/how to use APIs, common patterns, and archi
 
 **Run tests:**
 ```bash
-pytest tests/analyzers/ -v
+pytest tests/ -v
 ```
 
 **Create/update skill symlinks (Phase 2):**
@@ -225,28 +208,13 @@ Edit `vertical-plugins/*/skills/*/` source files directly (symlinks ensure chang
 
 ## Troubleshooting
 
-**MCP server not starting:**
-```bash
-python server.py  # Test manually
-cat ~/.claude/settings.json  # Verify MCP config includes debug-tracer and steering
-```
-
 **Steering returns no results:**
 ```bash
 # Check if indices exist
-ls ~/.acp-indices/pytorch-*/
+ls ~/.acp/repos/*/
 
 # Re-index PyTorch
 ./setup.sh
-```
-
-**Debug parsers returning errors:**
-```bash
-# Test individual parser
-python -c "from analyzers.dynamo_parsers import parse_graph_breaks; print(parse_graph_breaks('test'))"
-
-# Run parser tests
-pytest tests/analyzers/ -v -s
 ```
 
 **Skills not loading:**

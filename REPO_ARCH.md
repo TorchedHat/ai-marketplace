@@ -2,12 +2,12 @@
 
 ## Overview
 
-Multi-agent development system for PyTorch torch.compile, organized using Anthropic's vertical plugin pattern. Provides MCP tools, stage-specific skills, and structured agent definitions for debugging across all compilation stages (Dynamo, AOT Autograd, Inductor).
+Multi-agent development system for PyTorch torch.compile, organized using Anthropic's vertical plugin pattern. Provides steering MCP server, stage-specific skills, and structured agent definitions for debugging across all compilation stages (Dynamo, AOT Autograd, Inductor).
 
 **Design Philosophy**:
 - **Vertical Organization** - Domain-based structure (not type-based)
 - **Agent Formalization** - Structured definitions with JSON schemas
-- **Simple Parsers** - Aligned with torch.compile IR levels
+- **Direct Log Interpretation** - Claude reads TORCH_LOGS directly with skill guidance
 - **Skill Composition** - Agents bundle relevant skills automatically
 
 ## Project Structure
@@ -68,15 +68,7 @@ torch-compile-ai/
 │   ├── sync-agent-skills.py   # Sync skills to agent bundles
 │   └── validate-skills.py     # Lint and validate
 │
-├── analyzers/                  # 9 MCP parser implementations
-│   ├── __init__.py
-│   ├── dynamo_parsers.py      # Dynamo stage (3 parsers)
-│   ├── aot_parsers.py         # AOT stage (3 parsers)
-│   └── inductor_parsers.py    # Inductor stage (3 parsers)
-│
-├── server.py                   # MCP server entry point
 ├── tests/                      # Tests
-│   ├── analyzers/             # Parser unit tests
 │   └── multi-agent/           # Multi-agent test scenarios
 └── examples/                   # Example usage
 ```
@@ -123,8 +115,6 @@ Coordinator Agent (compile-overview skill)
     └─ Routes to specialists
     ↓
     ├─→ steering-mcp (API lookups)
-    ├─→ torch-compile-ai (parse stdout/files)
-    │   └─→ 9 parsers aligned with IR levels
     ├─→ bisector-agent (automated failure isolation)
     ├─→ dynamo-debugger-agent (Dynamo analysis)
     ├─→ inductor-debugger-agent (Inductor analysis)
@@ -133,98 +123,72 @@ Coordinator Agent (compile-overview skill)
 Synthesized Response (structured JSON)
 ```
 
-### 9 MCP Tools (Aligned with IR Levels)
+### MCP Server
 
-**Dynamo Stage:**
-1. `parse_graph_breaks(log_content)` - TORCH_LOGS="graph_breaks" stdout
-2. `parse_fx_graph(graph_content)` - fx_graph_readable.py file
-3. `parse_pre_grad_passes(before, after)` - FX graph before/after files
+**Steering MCP** - PyTorch API documentation and semantic search:
+- Query steering guidance for task approaches
+- Query API docs for function signatures
+- Indexed modules: torch/_dynamo, torch/_functorch, torch/_inductor
 
-**AOT Autograd Stage:**
-4. `parse_aot_joint_graph(graph_content)` - joint graph file
-5. `parse_aot_graphs(forward, backward)` - forward/backward graph files
-6. `parse_post_grad_passes(log_content)` - post-grad optimization logs
-
-**Inductor Stage:**
-7. `parse_fusion_decisions(log_content)` - TORCH_LOGS="fusion,schedule" stdout
-8. `parse_ir_post_fusion(ir_content)` - ir_post_fusion_*.txt file
-9. `parse_output_code(code_content)` - output_code.py file
-
-### Module Dependencies
-
-```
-server.py → all analyzer modules (imports 9 parsers)
-tests/ → analyzers (imports for testing)
-analyzers/__init__.py → all analyzer modules (re-exports)
-
-analyzers/
-├── dynamo_parsers.py (no internal dependencies)
-├── aot_parsers.py (no internal dependencies)
-└── inductor_parsers.py (no internal dependencies)
-```
+Skills guide Claude to read TORCH_LOGS output and debug files directly rather than using intermediate parsers.
 
 **External Dependencies** (runtime):
-- `mcp>=1.0.0` - MCP protocol types only
-- Standard library: `re`, `collections`, `asyncio`
+- `acp-steering-mcp` - Steering MCP server
 
 **External Dependencies** (dev):
-- `pytest>=8.0.0`, `pytest-asyncio>=0.23.0` - Testing
+- `pytest>=8.0.0` - Testing
+- `ruff` - Linting/formatting
+- `pyright` - Type checking
 
 ## Key Components
 
-### Parsers by Stage
+### Skills by Stage
 
-**Dynamo Stage (FX Graph Generation)** - `analyzers/dynamo_parsers.py`
-- `parse_graph_breaks` - Parse TORCH_LOGS="graph_breaks" stdout, categorize by type
-- `parse_fx_graph` - Parse fx_graph_readable.py, count operations, identify patterns
-- `parse_pre_grad_passes` - Compare before/after FX graphs, detect optimizations
+**Tracing Skills** - User-level debugging with TORCH_LOGS
+- `compile-trace-dynamo` - Graph breaks, FX graphs, pre-grad passes
+- `compile-trace-aot` - Functionalization, partitioning, post-grad passes
+- `compile-trace-inductor` - Fusion decisions, IR post-fusion, kernel codegen
 
-**AOT Autograd Stage (Training Mode)** - `analyzers/aot_parsers.py`
-- `parse_aot_joint_graph` - Parse joint forward+backward graph file
-- `parse_aot_graphs` - Parse separate forward/backward graph files
-- `parse_post_grad_passes` - Parse post-grad optimization logs
+**Implementation Skills** - PyTorch contributor internals
+- `pytorch-dynamo` - VariableTracker, guards, bytecode capture
+- `pytorch-aot` - Functorch, vmap, functionalization
+- `pytorch-inductor` - Lowerings, scheduling, Triton codegen
 
-**Inductor Stage (Lowering and Codegen)** - `analyzers/inductor_parsers.py`
-- `parse_fusion_decisions` - Parse TORCH_LOGS="fusion,schedule" stdout
-- `parse_ir_post_fusion` - Parse ir_post_fusion_*.txt (LoopBody IR)
-- `parse_output_code` - Parse output_code.py (Triton/C++ kernels)
+**Workflow Skills**
+- `compile-overview` - Bisect-first workflow, pipeline overview
+- `compile-bisect` - Automated failure isolation
 
-### Data Flow
+### Debug Output Workflow
 
 **Two types of torch.compile output:**
 
 **1. Stdout logs (ephemeral):**
-- TORCH_LOGS="graph_breaks" → parse_graph_breaks
-- TORCH_LOGS="fusion,schedule" → parse_fusion_decisions
-- Only available during code execution
-- Tracing-agent must parse immediately before returning
+- TORCH_LOGS="graph_breaks" - Graph break locations and reasons
+- TORCH_LOGS="fusion,schedule" - Fusion decisions
+- Claude reads directly with skill guidance
 
 **2. Debug files (persistent):**
-- fx_graph_readable.py → parse_fx_graph
-- output_code.py → parse_output_code
+- fx_graph_readable.py - FX graph structure
+- output_code.py - Generated Triton/C++ kernels
+- ir_post_fusion_*.txt - LoopBody IR
 - Saved to torch_compile_debug/
-- Can be read and parsed later
+- Claude reads directly with skill guidance
 
-**Tracing-Agent Workflow:**
+**Debugging Workflow:**
 ```python
 # 1. Run code with TORCH_LOGS
 stdout = bash("TORCH_LOGS='graph_breaks,fusion,output_code' python temp.py")
 
-# 2. Parse stdout immediately (ephemeral)
-findings = {}
-if "graph_breaks" in flags:
-    findings["graph_breaks"] = parse_graph_breaks(stdout)
+# 2. Show user the raw output
+# Claude analyzes stdout directly using skill knowledge
 
-# 3. Find debug directory
+# 3. Find and read debug files
 debug_dir = find_latest("torch_compile_debug/run_*/")
+fx_graph = read(f"{debug_dir}/fx_graph_readable.py")
+output_code = read(f"{debug_dir}/output_code.py")
 
-# 4. Read and parse files (persistent)
-if "output_code" in flags:
-    code = read(f"{debug_dir}/output_code.py")
-    findings["kernel"] = parse_output_code(code)
-
-# 5. Return structured findings
-return {"parsed_findings": findings, "debug_dir": debug_dir}
+# 4. Claude analyzes files directly using skill knowledge
+# No intermediate parsing - full context available
 ```
 
 ### File Locations
@@ -245,46 +209,21 @@ torch_compile_debug/run_<timestamp>-pid_<pid>/
 
 ## MCP Server Integration
 
-### Running the Server
+### Steering MCP
 
-```bash
-# Start MCP server
-python server.py
-```
-
-### Tool Invocation
-
-MCP clients call tools with JSON parameters:
-
-```json
-{
-  "name": "parse_graph_breaks",
-  "arguments": {
-    "log_content": "Graph break: print(...)\n  Reason: ..."
-  }
-}
-```
-
-Server routes to `dynamo_parsers.parse_graph_breaks(log_content)` and returns formatted string.
-
-### Claude Code Configuration
-
-Add to `~/.claude/settings.json`:
+Configured in `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "torch-compile-ai": {
-      "command": "python",
-      "args": ["/workspaces/pytorch-devcontainers/torch-compile-ai/server.py"],
-      "cwd": "/workspaces/pytorch-devcontainers/torch-compile-ai",
-      "env": {
-        "PYTHONPATH": "/workspaces/pytorch-devcontainers/torch-compile-ai"
-      }
+    "steering": {
+      "command": "/home/dev/.venv/bin/acp-steering-mcp"
     }
   }
 }
 ```
+
+Provides semantic search over PyTorch API documentation (dynamo, functorch, inductor modules).
 
 ## Deployment Manifests
 
@@ -360,23 +299,15 @@ pip install -e ".[dev]"
 
 ## Testing
 
-All parsers tested with real or realistic torch.compile output:
+Skills and multi-agent scenarios tested:
 
 ```bash
 # All tests
-pytest tests/analyzers/ -v
+pytest tests/ -v
 
-# Specific stage
-pytest tests/analyzers/test_dynamo_parsers.py -v
-
-# Specific test
-pytest tests/analyzers/test_inductor_parsers.py::TestParseOutputCode::test_triton_kernel -v
+# Multi-agent scenarios
+pytest tests/multi-agent/ -v
 ```
-
-**Test Requirements:**
-- Use realistic stdout/file content
-- Test both success and error cases
-- Verify output format and key information
 
 ## Multi-Agent System
 
@@ -413,14 +344,13 @@ pytest tests/analyzers/test_inductor_parsers.py::TestParseOutputCode::test_trito
 **Skills:** compile-bisect
 **Specialization:** Automated failure isolation, backend/subsystem binary search
 
-### MCP Servers
-- **torch-compile-ai**: 9 parsers (this repository)
-- **steering-mcp**: API documentation and code navigation
+### MCP Server
+- **steering**: API documentation and semantic search over PyTorch modules
 
 ### Tool Allowlists
 
-**Coordinator:** Read, Bash, MCP tools (steering + debug-tracer)
-**Experts** (dynamo, inductor, aot): Read, MCP steering only (no Write/Edit)
+**Coordinator:** Read, Bash, MCP steering
+**Experts** (dynamo, inductor, aot): Read, Bash, MCP steering
 **Bisector:** Read, Bash (needs to run bisector command)
 
 ## Skill Sync & Validation
@@ -489,13 +419,12 @@ python scripts/validate-skills.py
    python -m json.tool schemas/<schema>.json
    ```
 
-### Parser Development
+### Test Development
 
-1. **Write test** in `tests/analyzers/`
-2. **Implement parser** in `analyzers/`
-3. **Run tests**:
+1. **Write test** in `tests/multi-agent/`
+2. **Run tests**:
    ```bash
-   pytest tests/analyzers/ -v
+   pytest tests/ -v
    ```
 
 ## Reorganization History
