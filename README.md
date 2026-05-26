@@ -3,10 +3,11 @@
 Anthropic-pattern multi-agent debugging system for PyTorch compiler development.
 
 **Architecture:**
-- **Vertical Plugins** - Skills organized by compilation stage (Dynamo, AOT, Inductor) - **single source of truth**
-- **Agent Plugins** - Structured agents with manifests (coordinator, experts, bisector) - skills are symlinked from vertical plugins
-- **MCP Server** - Steering (PyTorch API documentation and semantic search)
-- **Skill Symlinks** - Agent plugin skills symlinked from vertical sources (single source of truth)
+- **Claude Code Plugin** - Self-contained plugin with all torch.compile debugging capabilities
+- **Skills** - 8 skills organized by compilation stage (Dynamo, AOT, Inductor)
+- **Agents** - 5 specialized sub-agents (coordinator, dynamo-expert, aot-expert, inductor-expert, bisector)
+- **MCP Server** - Steering (PyTorch API documentation and semantic search) bundled in plugin
+- **Source Organization** - Vertical plugins directory structure preserved for development
 
 **Features:**
 - 🔍 **Intelligent Routing** - Bisect-first workflow routes to stage-specific skills
@@ -16,55 +17,74 @@ Anthropic-pattern multi-agent debugging system for PyTorch compiler development.
 
 ## Quick Start
 
-```bash
-# 1. Run setup (one-time per container startup)
-cd /workspaces/pytorch-devcontainers/torch-compile-ai
-./setup.sh
+### Install and Use
 
-# 2. Skills are auto-discoverable - just ask!
-# Examples:
+```bash
+# Clone the plugin
+git clone https://github.com/morrison-turnansky/torch-compile-ai.git
+cd torch-compile-ai
+
+# Start Claude Code with the plugin
+claude --plugin-dir .
+
+# Skills are now available
+/compile-overview
+/pytorch-dynamo
+/compile-trace-inductor
+
+# Or just ask naturally:
 #   "Debug this graph break: def fn(x): return x[x.item()]"
 #   "Why isn't my reduction fusing?"
 #   "Show me the Triton kernel for: def fn(x): return x.relu()"
-#   "How do I implement a new VariableTracker?"
 ```
 
-**Note**: Skills are discoverable through the Claude Code skill system. Setup includes PyTorch API indexing for steering-based semantic search.
+**Auto-setup:** Plugin automatically installs dependencies and indexes PyTorch on first use via SessionStart hook.
+
+See **[INSTALL.md](INSTALL.md)** for detailed installation instructions and troubleshooting.
 
 ## Installation
+
+### Quick Install
+
+```bash
+claude plugin install https://github.com/pytorch/pytorch-devcontainers/tree/main/torch-compile-ai
+```
+
+On first use, the plugin automatically:
+- ✅ Installs `acp-steering-mcp` package
+- ✅ Indexes PyTorch modules (dynamo, inductor, functorch)
+- ✅ Configures MCP server for API documentation
+
+### Manual Install (Development)
 
 ```bash
 ./setup.sh
 ```
 
-This script:
-- Installs pip packages (`acp-steering-mcp`, `torch-compile-ai`)
-- **Indexes PyTorch** (dynamo + inductor) for steering API documentation
-- Configures MCP server in `.mcp.json`:
-  - `steering` - Semantic search over PyTorch APIs
+For detailed installation instructions, troubleshooting, and configuration options, see **[INSTALL.md](INSTALL.md)**.
 
 ## Usage
 
 ### Skill Discovery
 
-All skills are **auto-discoverable** via Claude Code's skill system. Use slash commands or ask natural questions:
+All skills are **auto-discoverable** via Claude Code's plugin system. Skills are namespaced under `torch-compile-ai:`:
 
 ```bash
 # Meta-skills (workflow guidance)
-/compile-overview         # Pipeline overview & bisect-first workflow
-/compile-bisect          # Automated failure isolation
+/torch-compile-ai:compile-overview         # Pipeline overview & bisect-first workflow
+/torch-compile-ai:compile-bisect          # Automated failure isolation
 
 # Tracing skills (user-level debugging)
-/compile-trace-dynamo    # Debug Dynamo: graph breaks, FX graphs, TORCH_LOGS
-/compile-trace-aot       # Debug AOT: functionalization, decompositions, partitioning
-/compile-trace-inductor  # Debug Inductor: fusion, scheduling, codegen
+/torch-compile-ai:compile-trace-dynamo    # Debug Dynamo: graph breaks, FX graphs, TORCH_LOGS
+/torch-compile-ai:compile-trace-aot       # Debug AOT: functionalization, decompositions, partitioning
+/torch-compile-ai:compile-trace-inductor  # Debug Inductor: fusion, scheduling, codegen
 
 # Implementation skills (PyTorch contributors)
-/pytorch-dynamo          # Dynamo internals: VariableTracker, guards, C++ runtime
-/pytorch-aot             # AOT/Functorch internals: vmap, functionalization, partitioning
-/pytorch-inductor        # Inductor internals: lowerings, scheduling, Triton codegen
+/torch-compile-ai:pytorch-dynamo          # Dynamo internals: VariableTracker, guards, C++ runtime
+/torch-compile-ai:pytorch-aot             # AOT/Functorch internals: vmap, functionalization, partitioning
+/torch-compile-ai:pytorch-inductor        # Inductor internals: lowerings, scheduling, Triton codegen
 
-# Or just ask naturally - skills load automatically based on context
+# Or just ask naturally - Claude loads skills automatically based on context
 ```
 
 ### Example Queries
@@ -100,45 +120,37 @@ See `tests/multi-agent/test_scenarios.md` for complete examples.
 
 ```
 torch-compile-ai/
-├── vertical-plugins/              # Skills organized by stage (source of truth)
+├── .claude-plugin/                # Plugin metadata
+│   └── plugin.json               # Plugin manifest (name, version, MCP config)
+│
+├── skills/                        # All skills (plugin-discoverable)
+│   ├── compile-overview/         # Meta: Pipeline overview & bisect-first workflow
+│   ├── compile-bisect/           # Meta: Failure isolation
+│   ├── pytorch-dynamo/           # Implementation: VariableTracker, guards, C++ runtime
+│   ├── compile-trace-dynamo/     # Tracing: TORCH_LOGS, graph breaks, FX graphs
+│   ├── pytorch-aot/              # Implementation: vmap, functorch, AOT internals
+│   ├── compile-trace-aot/        # Tracing: functionalization, partitioning, TORCH_LOGS
+│   ├── pytorch-inductor/         # Implementation: lowerings, scheduler, Triton
+│   └── compile-trace-inductor/   # Tracing: fusion, scheduling, kernels
+│
+├── agents/                        # Sub-agent definitions (plugin-discoverable)
+│   ├── coordinator.md            # Workflow coordinator
+│   ├── dynamo-expert.md          # Dynamo debugging specialist
+│   ├── aot-expert.md             # AOT debugging specialist
+│   ├── inductor-expert.md        # Inductor debugging specialist
+│   └── bisector.md               # Bisection specialist
+│
+├── .mcp.json                      # MCP server config (bundled in plugin)
+│
+├── vertical-plugins/              # Source organization (development)
 │   ├── dynamo-debugger/
-│   │   ├── skills/
-│   │   │   ├── compile-trace-dynamo/  # User-level: TORCH_LOGS, graph breaks, FX graphs
-│   │   │   └── pytorch-dynamo/        # Implementation: VariableTracker, guards, C++ runtime
-│   │   ├── prompts/dynamo-expert.md
-│   │   └── README.md
 │   ├── aot-debugger/
-│   │   ├── skills/
-│   │   │   ├── compile-trace-aot/     # User-level: functionalization, partitioning, TORCH_LOGS
-│   │   │   └── pytorch-aot/           # Implementation: vmap, functorch, AOT internals
-│   │   ├── prompts/aot-expert.md
-│   │   └── README.md
 │   ├── inductor-debugger/
-│   │   ├── skills/
-│   │   │   ├── compile-trace-inductor/  # User-level: fusion, scheduling, kernels
-│   │   │   └── pytorch-inductor/        # Implementation: lowerings, scheduler, Triton
-│   │   ├── prompts/inductor-expert.md
-│   │   └── README.md
-│   └── bisector/skills/compile-bisect/         # Failure isolation
+│   └── bisector/
 │
-├── coordinator/skills/compile-overview/  # Bisect-first workflow & pipeline overview
-│
-├── agent-plugins/                 # Agent definitions (Phase 2)
-│   ├── coordinator-agent/
-│   ├── dynamo-debugger-agent/
-│   ├── inductor-debugger-agent/
-│   ├── aot-debugger-agent/
-│   └── bisector-agent/
-│
-├── schemas/                       # JSON schemas for structured output (Phase 2)
-│   ├── handoff_request.json
-│   ├── dynamo_response.json
-│   └── inductor_response.json
-│
-├── scripts/                       # Automation (Phase 2)
-│   ├── sync-agent-skills.py       # Create symlinks from vertical-plugins to agent bundles
-│   └── validate-skills.py         # Lint and validate
-│
+├── agent-plugins/                 # Agent definitions (future)
+├── schemas/                       # JSON schemas for structured output
+├── scripts/                       # Automation
 └── tests/                         # pytest tests
 ```
 
@@ -146,6 +158,12 @@ torch-compile-ai/
 - **Tracing skills** (`compile-trace-*`): User-level debugging, TORCH_LOGS interpretation
 - **Implementation skills** (`pytorch-*`): Contributor-level, internals and architecture
 - **Meta skills** (`compile-overview`, `compile-bisect`): Workflow guidance
+
+**Plugin Structure:**
+- Skills at `skills/` directory are auto-discovered by Claude Code
+- Agents at `agents/` directory provide specialized sub-agents
+- MCP server bundled in plugin via `.mcp.json`
+- Plugin manifest at `.claude-plugin/plugin.json`
 
 See **[REPO_ARCH.md](REPO_ARCH.md)** for detailed architecture.
 
@@ -219,11 +237,24 @@ ls ~/.acp/repos/*/
 
 **Skills not loading:**
 ```bash
-# Verify skills are linked correctly
-ls -la /workspaces/pytorch-devcontainers/.claude/skills/
+# Verify plugin is configured
+cat /workspaces/pytorch-devcontainers/.claude/settings.json
 
-# Check skill rules
-cat /workspaces/pytorch-devcontainers/.claude/skills/skill-rules.json
+# Verify plugin structure
+ls -la /workspaces/pytorch-devcontainers/torch-compile-ai/.claude-plugin/
+ls -la /workspaces/pytorch-devcontainers/torch-compile-ai/skills/
+
+# Check if skills are in plugin
+find /workspaces/pytorch-devcontainers/torch-compile-ai/skills -name "SKILL.md"
+```
+
+**Plugin not recognized:**
+```bash
+# Re-run setup to regenerate settings
+./setup.sh
+
+# Manually verify plugin.json is valid JSON
+cat /workspaces/pytorch-devcontainers/torch-compile-ai/.claude-plugin/plugin.json | python -m json.tool
 ```
 
 ## License

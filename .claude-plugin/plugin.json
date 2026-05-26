@@ -1,0 +1,37 @@
+{
+  "name": "torch-compile-ai",
+  "displayName": "PyTorch torch.compile Debugging",
+  "version": "1.0.0",
+  "description": "Multi-agent debugging system for PyTorch compiler development. Provides stage-specific skills for Dynamo, AOT, and Inductor debugging with semantic API search.",
+  "skills": "./skills/",
+  "agents": [
+    "./agents/coordinator.md",
+    "./agents/dynamo-expert.md",
+    "./agents/aot-expert.md",
+    "./agents/inductor-expert.md",
+    "./agents/bisector.md"
+  ],
+  "hooks": "./hooks.json",
+  "author": {
+    "name": "morrison-turnansky"
+  },
+  "homepage": "https://github.com/pytorch/pytorch",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "pytorch",
+    "torch.compile",
+    "debugging",
+    "dynamo",
+    "inductor",
+    "aot",
+    "compiler",
+    "performance"
+  ],
+  "mcpServers": {
+    "steering": {
+      "command": "acp-steering-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "SessionStart": [
+    {
+      "type": "command",
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/ensure-setup.sh",
+      "background": true
+    }
+  ]
+}
