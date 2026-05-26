@@ -41,8 +41,6 @@ torch-compile-ai/
 ├── scripts/
 │   └── ensure-setup.sh          # SessionStart hook: auto-install deps
 │
-├── .mcp.json                     # MCP server (steering) config
-│
 ├── tests/                        # pytest tests
 │
 ├── INSTALL.md                    # Installation guide
@@ -149,7 +147,7 @@ callable_agents:
 **Steering Server:**
 - Provides semantic search over PyTorch API documentation
 - Indexed modules: torch._dynamo, torch._inductor, torch._functorch
-- Auto-configured via `.mcp.json`
+- Auto-configured via `.claude-plugin/plugin.json` mcpServers section
 
 **Usage:**
 ```bash

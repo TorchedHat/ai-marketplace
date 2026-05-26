@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "steering": {
-      "command": "/home/dev/.venv/bin/acp-steering-mcp"
-    }
-  }
-}

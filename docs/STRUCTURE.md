@@ -26,7 +26,6 @@ torch-compile-ai/
 ├── scripts/
 │   └── ensure-setup.sh          # SessionStart hook
 ├── hooks.json                    # Hook definitions
-├── .mcp.json                     # MCP server config
 ├── tests/                        # pytest tests
 ├── docs/                         # Documentation
 ├── README.md                     # User guide

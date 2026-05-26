@@ -140,8 +140,6 @@ torch-compile-ai/
 │   ├── inductor-expert.md        # Inductor debugging specialist
 │   └── bisector.md               # Bisection specialist
 │
-├── .mcp.json                      # MCP server config (bundled in plugin)
-│
 ├── vertical-plugins/              # Source organization (development)
 │   ├── dynamo-debugger/
 │   ├── aot-debugger/
@@ -162,7 +160,7 @@ torch-compile-ai/
 **Plugin Structure:**
 - Skills at `skills/` directory are auto-discovered by Claude Code
 - Agents at `agents/` directory provide specialized sub-agents
-- MCP server bundled in plugin via `.mcp.json`
+- MCP server configured in `.claude-plugin/plugin.json` mcpServers section
 - Plugin manifest at `.claude-plugin/plugin.json`
 
 See **[REPO_ARCH.md](REPO_ARCH.md)** for detailed architecture.
