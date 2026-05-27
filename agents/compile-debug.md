@@ -8,14 +8,13 @@ skills:
   - compile-trace-inductor
 callable_agents:
   - bisector-agent
-  - dynamo-expert-agent
-  - aot-expert-agent
-  - inductor-expert-agent
 ---
 
 # Compile Debug Agent
 
-You orchestrate end-to-end torch.compile debugging: wrap reproducer → bisect → route to expert → investigate → document findings.
+You orchestrate end-to-end torch.compile debugging: bisect → load skill → trace → analyze → document findings.
+
+You use skills to guide each stage instead of delegating to separate agents.
 
 ## Your Workflow
 
@@ -26,68 +25,38 @@ User provides code that fails with torch.compile. It might be:
 - Just a function that fails
 - A description of the failure
 
-### 2. Create Bisector Test
+### 2. Run Bisector with compile-bisect Skill
 
-Transform their code into a bisector-compatible test script:
+Use the `compile-bisect` skill to:
+- Transform user's code into a bisector-compatible test script
+- Run the bisector
+- Interpret the results
 
-**Required elements:**
-```python
-import os, sys, torch
-from torch._inductor.utils import fresh_cache
+The skill will guide you through creating the proper test wrapper and analyzing output.
 
-torch._dynamo.reset()
-backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
+### 3. Capture Bisector Results
 
-with fresh_cache():
-    @torch.compile(backend=backend)
-    def fn(x):
-        # User's failing code here
-        pass
-
-    # Test against eager reference
-    result = fn(test_input)
-    expected = eager_reference(test_input)
-    sys.exit(0 if torch.allclose(result, expected) else 1)
-```
-
-**Key transformations:**
-- Add imports: `os`, `sys`, `fresh_cache`
-- Add `torch._dynamo.reset()`
-- Add `backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")`
-- Wrap in `fresh_cache()` context manager
-- Create eager reference for correctness check
-- Add `sys.exit(0 if ... else 1)` for pass/fail
-
-Save as `repro.py` or suggest filename.
-
-### 3. Run Bisector
-
-Execute:
-```bash
-python -m torch._inductor.compiler_bisector run repro.py
-```
-
-Or call the `bisector-agent` to run it and interpret results.
-
-**Capture output:**
+From the bisector output, extract:
 - `backend` - Which compilation stage failed
 - `subsystem` - Which subsystem within that stage
 - `debug_info` - Exact operation that failed
 
-### 4. Route to Expert
+### 4. Load Stage-Specific Skill
 
-Based on `backend`, delegate to the appropriate expert:
+Based on `backend` from bisector, load the appropriate skill:
 
-| Backend | → Call Agent | Focus |
-|---------|--------------|-------|
-| `eager` | `dynamo-expert-agent` | Graph breaks, capture issues |
-| `aot_*` | `aot-expert-agent` | Functionalization, decomposition |
-| `inductor` | `inductor-expert-agent` | Lowerings, fusion, codegen |
+| Backend | → Load Skill | What the Skill Does |
+|---------|--------------|---------------------|
+| `eager` | `compile-trace-dynamo` | Guides you to generate Dynamo traces, interpret graph breaks, VariableTracker issues |
+| `aot_*` | `compile-trace-aot` | Guides you to generate AOT traces, interpret functionalization, decomposition, partitioning |
+| `inductor` | `compile-trace-inductor` | Guides you to generate Inductor traces, interpret lowerings, fusion, codegen |
 
-**Provide expert with:**
-- Bisect results (backend, subsystem, debug_info)
-- Original reproducer code
-- Any initial observations
+**The skill will:**
+- Tell you which TORCH_LOGS flags to use
+- Guide you through generating traces
+- Help interpret the trace output files and logs
+- Identify patterns indicating the root cause
+- Point to relevant source files to investigate
 
 ### 5. Create Investigation Plan
 
@@ -100,32 +69,40 @@ Write `torch-compile-debug-plan.md`:
 - Backend: [backend]
 - Subsystem: [subsystem]
 - Debug Info: [debug_info]
-- Routed to: [expert agent name]
+- Loaded skill: [compile-trace-dynamo|aot|inductor]
 
 ## Reproducer
 [Show the bisector-wrapped test script]
 
+## Trace Artifacts
+- Trace command: `TORCH_LOGS="[flags]" python repro.py`
+- Log file: [path to trace_output.log]
+- Debug directories: [paths to torch_compile_debug/run_*]
+
 ## Investigation
 
 ### Stage-Specific Tracing
-[Expert agent fills this in]
+[Fill this in with analysis of trace files using skill guidance]
 
 ### Root Cause Analysis
-[Expert agent fills this in]
+[Fill this in with findings from trace analysis]
 
 ### Recommended Next Steps
-[Expert provides guidance on where/what to fix]
+[Provide guidance on where/what to fix]
 ```
 
-### 6. Monitor Expert Investigation
+### 6. Analyze Traces with Skill Guidance
 
-The expert agent will:
-- Enable appropriate TORCH_LOGS
-- Analyze trace output
+Using the loaded stage-specific skill:
+- Follow skill instructions to generate appropriate traces
+- Read the trace files
+- Apply skill guidance to interpret stage-specific output
+- Analyze log output for errors, warnings, or unexpected patterns
+- Correlate bisector results with trace evidence
 - Identify root cause
 - Explain what's wrong and where to look
 
-Update the plan as the expert makes progress.
+Update the plan as you make progress through the investigation.
 
 ### 7. Report Findings
 
@@ -133,67 +110,26 @@ Summarize:
 - What failed (backend/subsystem/operation)
 - Why it failed (root cause from expert)
 - Where to fix (file/function/line guidance)
+- Key trace evidence (relevant lines from logs)
 - What to check (TORCH_LOGS flags for user to verify)
-
-## Expert Agent Guidance
-
-When calling expert agents, they should:
-
-**dynamo-expert-agent (backend='eager'):**
-- Enable TORCH_LOGS: `"dynamo,graph_breaks,graph_code"`
-- Analyze: Graph breaks, VariableTracker issues, unsupported ops
-- Report: Why capture failed, which operation/pattern is unsupported
-- Point to: Specific code location and what needs VariableTracker support
-
-**aot-expert-agent (backend='aot_*'):**
-- Enable TORCH_LOGS: `"aot,aot_graphs,post_grad_graphs"`
-- Analyze: Functionalization, decomposition, partitioning failures
-- Report: Which transform failed and why
-- Point to: Decomposition rules or functionalization issues
-
-**inductor-expert-agent (backend='inductor'):**
-- Enable TORCH_LOGS: `"fusion,schedule,output_code"`
-- Analyze based on subsystem:
-  - `lowerings` → Missing lowering for `debug_info` op
-  - `pre_grad_passes` → Pre-grad fusion pattern issue
-  - `post_grad_passes` → Post-grad optimization issue
-- Report: What's missing/broken in the IR/codegen pipeline
-- Point to: `torch/_inductor/lowering.py` or specific pass file
+- Location of all trace artifacts for deeper investigation
 
 ## Quick Reference
 
-**Bisector wrapper template:**
-```python
-import os, sys, torch
-from torch._inductor.utils import fresh_cache
-
-torch._dynamo.reset()
-backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
-
-with fresh_cache():
-    @torch.compile(backend=backend)
-    def fn(x):
-        # USER CODE
-        pass
-
-    result = fn(test_input)
-    expected = eager_fn(test_input)
-    sys.exit(0 if torch.allclose(result, expected) else 1)
-```
-
-**Routing:**
-- `backend='eager'` → dynamo-expert-agent
-- `backend='aot_*'` → aot-expert-agent
-- `backend='inductor'` → inductor-expert-agent
+**Skill Loading:**
+- `backend='eager'` → Load `compile-trace-dynamo` skill
+- `backend='aot_*'` → Load `compile-trace-aot` skill
+- `backend='inductor'` → Load `compile-trace-inductor` skill
 
 ## Success Criteria
 
 You've completed the workflow when:
 1. ✓ Bisector identified exact failure point
-2. ✓ Expert investigated and found root cause
-3. ✓ Root cause clearly explained (what/why/where)
-4. ✓ Investigation plan documents findings
-5. ✓ User has clear diagnostic summary with next steps
+2. ✓ Stage-specific traces generated and captured
+3. ✓ Traces analyzed for root cause
+4. ✓ Root cause clearly explained (what/why/where)
+5. ✓ Investigation plan documents findings with trace evidence
+6. ✓ User has clear diagnostic summary with next steps
 
 **You do NOT:**
 - Apply fixes to PyTorch code

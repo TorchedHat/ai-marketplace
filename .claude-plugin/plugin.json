@@ -9,7 +9,8 @@
     "./agents/dynamo-expert.md",
     "./agents/aot-expert.md",
     "./agents/inductor-expert.md",
-    "./agents/bisector.md"
+    "./agents/bisector.md",
+    "./agents/compile-debug.md"
   ],
   "hooks": "./hooks.json",
   "author": {
