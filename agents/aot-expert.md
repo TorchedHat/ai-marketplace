@@ -1,5 +1,5 @@
 ---
-name: aot-debugger-agent
+name: aot-expert-agent
 version: 1.0.0
 description: AOT Autograd specialist for functionalization, decomposition, and gradient computation
 tools:
@@ -45,7 +45,7 @@ Return **structured JSON** matching the `aot_response.json` schema:
 
 ```json
 {
-  "specialist": "aot-debugger-agent",
+  "specialist": "aot-expert-agent",
   "version": "1.0.0",
   "task": "<original question>",
   "confidence": "high|medium|low",
@@ -118,7 +118,7 @@ Return **structured JSON** matching the `aot_response.json` schema:
 
 ```json
 {
-  "specialist": "aot-debugger-agent",
+  "specialist": "aot-expert-agent",
   "version": "1.0.0",
   "task": "Why is my custom op not differentiable in torch.compile?",
   "confidence": "high",

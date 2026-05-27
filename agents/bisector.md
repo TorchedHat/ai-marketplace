@@ -14,7 +14,7 @@ skills:
 callable_agents:
   - coordinator-agent
   - dynamo-expert-agent
-  - aot-debugger-agent
+  - aot-expert-agent
   - inductor-expert-agent
 parent_agent: coordinator-agent
 ---
@@ -84,7 +84,7 @@ Return **structured analysis** with bisection results and routing:
 
 5. **Route Based on Results**
    - `backend='eager'` → dynamo-expert-agent
-   - `backend='aot_*'` → aot-debugger-agent
+   - `backend='aot_*'` → aot-expert-agent
    - `backend='inductor'` → inductor-expert-agent
    - Include bisector findings in handoff context
 

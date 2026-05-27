@@ -17,7 +17,7 @@ skills:
 callable_agents:
   - dynamo-debugger-agent
   - inductor-debugger-agent
-  - aot-debugger-agent
+  - aot-expert-agent
   - bisector-agent
 parent_agent: null
 ---
@@ -77,7 +77,7 @@ Return **synthesized guidance** in this format:
 
    **Stage-specific issues** (delegate to specialist):
    - Graph breaks, VariableTracker → `dynamo-debugger-agent`
-   - Functionalization, decomposition → `aot-debugger-agent`
+   - Functionalization, decomposition → `aot-expert-agent`
    - Fusion, kernels, Triton → `inductor-debugger-agent`
 
    **Multi-stage analysis** (parallel delegation):
