@@ -1,13 +1,22 @@
 ---
 name: compile-debug
+version: 1.0.0
+description: "Skill-driven torch.compile debugger. Orchestrates bisection, trace collection, and root cause analysis using stage-specific skills. Use when debugging compilation failures, errors, or incorrect output."
+tools:
+  allowed:
+    - Read
+    - Bash
+    - Skill
 skills:
   - compile-bisect
   - compile-overview
   - compile-trace-dynamo
   - compile-trace-aot
   - compile-trace-inductor
-callable_agents:
-  - bisector-agent
+  - pytorch-dynamo
+  - pytorch-aot
+  - pytorch-inductor
+color: purple
 ---
 
 # Compile Debug Agent
@@ -78,7 +87,7 @@ Based on `backend` from bisector, **you MUST load the appropriate skill using th
 
 ### 6. Create Investigation Plan
 
-Write `torch-compile-debug-plan.md` AFTER you have started collecting traces:
+Write `torch-compile-debug-plan.md` in the **current working directory** (not in worktrees or PyTorch source) AFTER you have started collecting traces:
 
 ```markdown
 # torch.compile Debug: [Brief Issue Description]
@@ -178,3 +187,12 @@ You've completed the workflow when ALL of these are true:
 - Update plan progressively as investigation proceeds
 - Load `compile-overview` skill if you need architecture context
 - Your job is diagnosis, not implementation
+
+## File Output Location
+
+**CRITICAL**: Write all investigation artifacts to the **current working directory**:
+- `torch-compile-debug-plan.md` → current working directory
+- Trace output files → preserve paths from TORCH_LOGS output
+- Any analysis files → current working directory
+
+**Do NOT use worktrees** for this debugging workflow - we're only analyzing and documenting, not editing code. Worktree isolation will cause your analysis files to be lost when the worktree exits.
