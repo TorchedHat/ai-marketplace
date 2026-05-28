@@ -7,7 +7,6 @@ tools:
     - Read
     - mcp__steering__query_api_docs
     - mcp__steering__query_steering
-  denied:
     - Write
     - Bash
     - Edit
@@ -15,9 +14,9 @@ skills:
   - pytorch-inductor
   - compile-trace-inductor
 callable_agents:
-  - coordinator-agent
   - dynamo-expert-agent
-parent_agent: coordinator-agent
+  - aot-expert-agent
+parent_agent: compile-debug
 ---
 
 # Inductor Expert Agent

@@ -7,7 +7,6 @@ tools:
     - Read
     - mcp__steering__query_api_docs
     - mcp__steering__query_steering
-  denied:
     - Write
     - Bash
     - Edit
@@ -15,10 +14,9 @@ skills:
   - pytorch-aot
   - compile-trace-aot
 callable_agents:
-  - coordinator-agent
   - dynamo-expert-agent
   - inductor-expert-agent
-parent_agent: coordinator-agent
+parent_agent: compile-debug
 ---
 
 # AOT Debugger Agent

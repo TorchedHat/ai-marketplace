@@ -14,7 +14,7 @@ Detailed documentation for all agent frontmatter fields, advanced patterns, and 
 
 ```yaml
 name: code-reviewer
-name: torch-compile-ai:bisector-agent  # Plugin namespace
+name: torch-compile-ai:compile-debug  # Plugin namespace
 ```
 
 **description:**
@@ -87,7 +87,7 @@ skills:
 callable_agents:
   - dynamo-expert-agent
   - inductor-expert-agent
-  - bisector-agent
+  - compile-debug
 ```
 
 **parent_agent:**
@@ -95,7 +95,7 @@ callable_agents:
 - Documentation only, not enforced
 
 ```yaml
-parent_agent: coordinator-agent
+parent_agent: compile-debug
 ```
 
 **maxTurns:**
@@ -238,7 +238,7 @@ Exiting worktree...
 **Frontmatter:**
 ```yaml
 ---
-name: coordinator-agent
+name: compile-debug
 description: Orchestrates debugging by routing tasks to specialized agents
 tools:
   allowed:
@@ -249,7 +249,7 @@ skills:
 callable_agents:
   - dynamo-expert-agent
   - inductor-expert-agent
-  - bisector-agent
+  - compile-debug
 parent_agent: null
 ---
 ```
@@ -261,7 +261,7 @@ parent_agent: null
 Based on task type:
 - Graph breaks → dynamo-expert-agent
 - Fusion issues → inductor-expert-agent
-- Compilation failures → bisector-agent first
+- Compilation failures → compile-debug first
 
 ## Synthesis
 
@@ -279,8 +279,8 @@ Combine findings from specialists into unified guidance:
 **Frontmatter:**
 ```yaml
 ---
-name: bisector-agent
-description: Compiler bisector specialist for automatically isolating compilation failures
+name: compile-debug
+description: Skill-driven debugger specialist for automatically isolating compilation failures
 tools:
   allowed:
     - Read
@@ -291,10 +291,10 @@ tools:
 skills:
   - compile-bisect
 callable_agents:
-  - coordinator-agent
+  - compile-debug
   - dynamo-expert-agent
   - inductor-expert-agent
-parent_agent: coordinator-agent
+parent_agent: compile-debug
 ---
 ```
 
@@ -302,7 +302,7 @@ parent_agent: coordinator-agent
 ```markdown
 ## Identity
 
-You are a **compiler bisector specialist**. Your role is to:
+You are a **skill-driven torch.compile debugger**. Your role is to:
 - Guide users through automated bisection workflows
 - Execute bisector to isolate failing backend/subsystem
 - Interpret bisection results
@@ -370,8 +370,8 @@ When delegating to specialists, emit handoff_request JSON:
 \`\`\`json
 {
   "type": "handoff_request",
-  "from_agent": "coordinator-agent",
-  "to_agent": "bisector-agent",
+  "from_agent": "compile-debug",
+  "to_agent": "compile-debug",
   "task": {
     "type": "bisect_failure",
     "issue": "segfault during compilation",
@@ -576,7 +576,7 @@ description: "Helper agent"
 description: "Does debugging stuff"
 
 # Good
-description: "Compiler bisector specialist for automatically isolating compilation failures. Use when debugging torch.compile errors, crashes, or incorrect output."
+description: "Skill-driven debugger specialist for automatically isolating compilation failures. Use when debugging torch.compile errors, crashes, or incorrect output."
 ```
 
 ### ❌ Overly Broad Scope
@@ -587,7 +587,7 @@ name: do-everything
 description: "Handles all debugging tasks"
 
 # Good - Focused, single-purpose
-name: bisector-agent
+name: compile-debug
 description: "Isolates compilation failures through automated bisection"
 ```
 
@@ -654,7 +654,7 @@ Include file:line references and code examples for each issue."
 Prepare test queries that should trigger your agent:
 
 ```
-# For bisector-agent
+# For compile-debug
 "My model crashes during compilation with a segfault"
 "torch.compile fails with an error about invalid lowering"
 

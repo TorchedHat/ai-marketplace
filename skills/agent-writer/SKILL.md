@@ -86,7 +86,7 @@ Provide output in this format:
 
 ```yaml
 name: code-reviewer
-name: torch-compile-ai:bisector-agent  # Plugin namespace
+name: torch-compile-ai:compile-debug  # Plugin namespace
 ```
 
 **description:**
@@ -134,7 +134,7 @@ skills:
 
 ✅ **Good:**
 ```yaml
-description: "Compiler bisector specialist for automatically isolating compilation failures. Use when debugging torch.compile errors, crashes, or incorrect output to identify which backend/subsystem fails."
+description: "Skill-driven debugger specialist for automatically isolating compilation failures. Use when debugging torch.compile errors, crashes, or incorrect output to identify which backend/subsystem fails."
 ```
 
 ❌ **Too vague:**
@@ -241,8 +241,8 @@ Deep expertise in specific domain:
 
 ```yaml
 callable_agents:
-  - coordinator-agent
-parent_agent: coordinator-agent
+  - compile-debug
+parent_agent: compile-debug
 ```
 
 **For detailed patterns, see [reference.md](reference.md)**
@@ -274,7 +274,7 @@ parent_agent: coordinator-agent
 ## Common Anti-Patterns
 
 ❌ **Vague descriptions** - "Helper agent"
-✅ **Specific descriptions** - "Compiler bisector for torch.compile failures"
+✅ **Specific descriptions** - "Skill-driven debugger for torch.compile failures"
 
 ❌ **Overly broad scope** - One agent doing everything
 ✅ **Focused purpose** - Single, specific capability
@@ -310,8 +310,8 @@ parent_agent: coordinator-agent
 
 **See [examples.md](examples.md) for complete agent definitions:**
 - Read-Only Specialist (code-reviewer)
-- Coordinator Agent (debug-coordinator)
-- Bisection Specialist (bisector-agent)
+- Skill-Driven Orchestrator (debug-coordinator)
+- Skill-Driven Orchestrator (compile-debug)
 
 ## Advanced Topics
 

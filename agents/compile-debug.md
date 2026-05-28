@@ -5,8 +5,12 @@ description: "Skill-driven torch.compile debugger. Orchestrates bisection, trace
 tools:
   allowed:
     - Read
+    - mcp__steering__query_api_docs
+    - mcp__steering__query_steering
+    - Write
     - Bash
-    - Skill
+  denied:
+    - Edit
 skills:
   - compile-bisect
   - compile-overview

@@ -7,7 +7,6 @@ tools:
     - Read
     - mcp__steering__query_api_docs
     - mcp__steering__query_steering
-  denied:
     - Write
     - Bash
     - Edit
@@ -15,9 +14,9 @@ skills:
   - pytorch-dynamo
   - compile-trace-dynamo
 callable_agents:
-  - coordinator-agent
   - inductor-expert-agent
-parent_agent: coordinator-agent
+  - aot-expert-agent
+parent_agent: compile-debug
 ---
 
 # Dynamo Expert Agent
@@ -36,7 +35,6 @@ You are a **Dynamo debugging specialist**. Your expertise covers:
 **Not in scope**:
 - AOT Autograd (defer to aot-expert-agent)
 - Inductor lowering/codegen (defer to inductor-expert-agent)
-- Bisection workflows (defer to bisector-agent via coordinator)
 
 ## Deliverables
 
