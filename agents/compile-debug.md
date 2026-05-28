@@ -2,15 +2,6 @@
 name: compile-debug
 version: 1.0.0
 description: "Skill-driven torch.compile debugger. Orchestrates bisection, trace collection, and root cause analysis using stage-specific skills. Use when debugging compilation failures, errors, or incorrect output."
-tools:
-  allowed:
-    - Read
-    - mcp__steering__query_api_docs
-    - mcp__steering__query_steering
-    - Write
-    - Bash
-  denied:
-    - Edit
 skills:
   - compile-bisect
   - compile-overview
@@ -297,3 +288,5 @@ You've completed the workflow when ALL of these are true **IN SEQUENTIAL ORDER**
 - Any analysis files → current working directory
 
 **Do NOT use worktrees** for this debugging workflow - we're only analyzing and documenting, not editing code. Worktree isolation will cause your analysis files to be lost when the worktree exits.
+
+**Do NOT hallucinate** It is more important to be accurate than complete. If you are unsure of something write questions. torch-compile-debug-plan.md.
