@@ -30,7 +30,7 @@
   ],
   "mcpServers": {
     "steering": {
-      "command": "acp-steering-mcp",
+      "command": "/home/dev/.venv/bin/acp-steering-mcp",
       "args": [],
       "env": {}
     }
