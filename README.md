@@ -29,14 +29,18 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 
 👉 **[Full documentation](TORCH_COMPILE_TOOLS.md)**
 
-### Marketplace Install
+### Installation
 
 ```bash
-# Add the marketplace
-claude plugin marketplace add https://raw.githubusercontent.com/morrison-turnansky/ai-marketplace/main/.claude-marketplace/marketplace.json
+# Add the marketplace (one-time setup)
+claude plugin marketplace add morrison-turnansky/ai-marketplace
 
 # Install the plugin
 claude plugin install ai-marketplace
+
+# Or from inside Claude Code
+/plugin marketplace add morrison-turnansky/ai-marketplace
+/plugin install ai-marketplace
 ```
 
 ### Selective Installation
@@ -96,9 +100,8 @@ Delegate complex tasks to expert agents:
 ```
 ai-marketplace/
 ├── .claude-plugin/          # Plugin metadata
-│   └── plugin.json          # Marketplace configuration
-├── .claude-marketplace/     # Marketplace listing
-│   └── marketplace.json     # Discovery and installation metadata
+│   ├── plugin.json          # Plugin configuration
+│   └── marketplace.json     # Marketplace discovery metadata
 ├── agents/                  # Specialized AI agents
 │   └── *.md                 # Agent definitions
 ├── skills/                  # User-invocable skills
@@ -115,7 +118,7 @@ ai-marketplace/
 This repository serves as a **reference implementation** for Claude Code plugin marketplace patterns:
 
 - **Plugin packaging** - See `.claude-plugin/plugin.json` for plugin structure
-- **Marketplace listing** - See `.claude-marketplace/marketplace.json` for discovery
+- **Marketplace listing** - See `.claude-plugin/marketplace.json` for discovery
 - **Skill development** - Use `/skill-writer` to create new skills
 - **Agent development** - Use `/agent-writer` to create specialized agents
 - **Auto-setup hooks** - See `hooks.json` and `scripts/ensure-setup.sh`
