@@ -162,31 +162,6 @@ We welcome contributions of new tools, skills, and agents for the PyTorch ecosys
 - Check REPO_ARCH.md for contribution guidelines
 - Follow code guidelines in CLAUDE.md
 
-## Troubleshooting
-
-### Plugin Not Loading
-
-```bash
-cd /path/to/ai-marketplace
-ls -la .claude-plugin/plugin.json  # Should exist
-claude --plugin-dir .
-```
-
-### Skills Not Found
-
-```bash
-# List all available skills
-find skills -name "SKILL.md"
-
-# Check plugin configuration
-cat .claude-plugin/plugin.json
-```
-
-### Tool-Specific Issues
-
-See documentation for specific tool collections:
-- torch.compile tools: [TORCH_COMPILE_TOOLS.md](TORCH_COMPILE_TOOLS.md)
-
 ## License
 
 Part of the PyTorch devcontainer tooling. See [LICENSE](LICENSE) for details.
