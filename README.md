@@ -1,5 +1,7 @@
 # AI Marketplace
 
+[![GitHub](https://img.shields.io/badge/GitHub-ai--marketplace-blue?logo=github)](https://github.com/morrison-turnansky/ai-marketplace)
+
 A curated collection of Claude Code plugins, skills, and agents for PyTorch development. This marketplace provides AI-powered tools for debugging, development, and optimization across the PyTorch ecosystem.
 
 ## What is This?
@@ -27,28 +29,13 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 
 👉 **[Full documentation](TORCH_COMPILE_TOOLS.md)**
 
-## Installation
-
-### Quick Install
-
-```bash
-# Clone the repository
-git clone https://github.com/morrison-turnansky/ai-marketplace.git
-cd ai-marketplace
-
-# Start Claude Code with all marketplace plugins
-claude --plugin-dir .
-```
-
-### Marketplace Install (Future)
-
-Once published:
+### Marketplace Install
 
 ```bash
 # Add the marketplace
 claude plugin marketplace add https://raw.githubusercontent.com/morrison-turnansky/ai-marketplace/main/.claude-marketplace/marketplace.json
 
-# Install specific tool collections
+# Install the plugin
 claude plugin install ai-marketplace
 ```
 
@@ -201,8 +188,9 @@ See documentation for specific tool collections:
 
 Part of the PyTorch devcontainer tooling. See [LICENSE](LICENSE) for details.
 
-## Support
+## Links
 
+- **Repository**: [github.com/morrison-turnansky/ai-marketplace](https://github.com/morrison-turnansky/ai-marketplace)
 - **Issues**: [GitHub Issues](https://github.com/morrison-turnansky/ai-marketplace/issues)
 - **Documentation**: See individual tool documentation in this repository
 - **Contributing**: See [REPO_ARCH.md](REPO_ARCH.md) for guidelines
