@@ -1,5 +1,5 @@
 #!/bin/bash
-# Auto-setup script for torch-compile-ai plugin
+# Auto-setup script for ai-marketplace plugin
 # Runs on SessionStart to ensure dependencies are installed
 
 set -e

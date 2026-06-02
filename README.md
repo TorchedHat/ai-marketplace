@@ -1,20 +1,27 @@
 # ai-marketplace
 
-Multi-agent debugging system for PyTorch torch.compile development. Provides stage-specific skills, specialized agents, and semantic API search for Dynamo, AOT Autograd, and Inductor.
+Claude Code plugin marketplace for PyTorch development tools. Provides debugging skills, specialized agents, and MCP server integrations for torch.compile and other PyTorch workflows.
+
+This repository serves as both:
+1. **A working plugin** - Install directly to use torch.compile debugging tools
+2. **A marketplace template** - Example structure for publishing Claude Code plugins
 
 ## What This Repo Provides
 
-**8 Debugging Skills:**
-- Meta skills: `compile-overview`, `compile-bisect`
-- Tracing skills: `compile-trace-dynamo`, `compile-trace-aot`, `compile-trace-inductor`
-- Implementation skills: `pytorch-dynamo`, `pytorch-aot`, `pytorch-inductor`
+**10 Skills:**
+- **torch.compile debugging**: `compile-overview`, `compile-bisect`, `compile-trace-dynamo`, `compile-trace-aot`, `compile-trace-inductor`
+- **PyTorch implementation**: `pytorch-dynamo`, `pytorch-aot`, `pytorch-inductor`
+- **Skill/agent development**: `skill-writer`, `agent-writer`
 
-**5 Specialized Agents:**
-- Coordinator, dynamo-expert, aot-expert, inductor-expert, bisector
+**4 Specialized Agents:**
+- `compile-debug` - Multi-stage compilation debugging coordinator
+- `dynamo-expert` - Dynamo graph capture and tracing specialist
+- `aot-expert` - AOT Autograd functionalization and gradient specialist
+- `inductor-expert` - Inductor lowering and codegen specialist
 
 **MCP Server Integration:**
-- Semantic search over PyTorch Dynamo, Inductor, and Functorch APIs
-- Auto-indexed on first use
+- **steering** - Semantic search over PyTorch Dynamo, Inductor, and Functorch APIs
+- Auto-indexed on first use from PyTorch source
 
 ## Installation
 
@@ -32,8 +39,8 @@ claude --plugin-dir .
 The plugin automatically (via SessionStart hook):
 - ✅ Installs required dependencies (`acp-steering-mcp`)
 - ✅ Indexes PyTorch modules on first use
-- ✅ Configures MCP server
-- ✅ Loads all 8 skills and 5 agents
+- ✅ Configures steering MCP server
+- ✅ Loads all 10 skills and 4 agents
 
 ### Prerequisites
 
@@ -94,23 +101,32 @@ Skills load automatically based on context:
 
 ### Example Queries
 
-**User-level debugging:**
+**torch.compile debugging:**
 ```
 Why does this graph break? def fn(x): return x[x.item()]
 Show me the fusion decisions for this model
 Parse these TORCH_LOGS and explain what happened
+Bisect this compilation failure to find the exact failing op
 ```
 
-**API lookup:**
+**PyTorch API lookup (via steering MCP):**
 ```
 What are the parameters for Pointwise.__init__?
 How do I use SymInt in C++ code?
+Show me FakeTensor usage patterns
 ```
 
-**Implementation work:**
+**PyTorch implementation work:**
 ```
 How do I implement a new VariableTracker type?
 Where do I add a lowering for my custom op?
+What's the AOT partitioning algorithm?
+```
+
+**Skill/agent development:**
+```
+/skill-writer - Create a new Claude Code skill
+/agent-writer - Create a specialized agent definition
 ```
 
 ## Troubleshooting
@@ -126,7 +142,7 @@ claude --plugin-dir .
 ### Skills Not Found
 
 ```bash
-# Should show 8 SKILL.md files
+# Should show 10 SKILL.md files
 find skills -name "SKILL.md"
 ```
 
