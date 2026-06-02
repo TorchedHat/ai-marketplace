@@ -1,4 +1,4 @@
-# PyTorch AI Marketplace
+# AI Marketplace
 
 A curated collection of Claude Code plugins, skills, and agents for PyTorch development. This marketplace provides AI-powered tools for debugging, development, and optimization across the PyTorch ecosystem.
 
@@ -26,13 +26,6 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 - Implementation guidance for compiler development
 
 👉 **[Full documentation](TORCH_COMPILE_TOOLS.md)**
-
-### Coming Soon
-
-- **torchvision tools** - Image processing and computer vision workflows
-- **distributed training** - Multi-GPU and distributed debugging
-- **performance optimization** - Profiling and optimization workflows
-- **model analysis** - Architecture analysis and validation
 
 ## Installation
 
