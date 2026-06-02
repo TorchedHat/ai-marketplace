@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Multi-agent system for PyTorch torch.compile development and debugging. Provides stage-specific skills, steering MCP server for API documentation, and structured agent definitions.
+Curated marketplace of AI tools, skills, and agents for PyTorch development workflows. Currently focused on torch.compile debugging with plans to expand to other PyTorch subsystems (torchvision, distributed, performance optimization).
 
 **For architecture and repository structure, see [REPO_ARCH.md](REPO_ARCH.md)**.
 

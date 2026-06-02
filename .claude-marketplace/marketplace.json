@@ -1,7 +1,7 @@
 {
   "name": "ai-marketplace",
-  "displayName": "PyTorch torch.compile Debugging Tools",
-  "description": "Multi-agent debugging system for PyTorch compiler development with stage-specific skills and semantic API search",
+  "displayName": "PyTorch AI Marketplace",
+  "description": "Curated collection of AI tools, skills, and agents for PyTorch development workflows across the ecosystem",
   "plugins": {
     "ai-marketplace": {
       "source": {

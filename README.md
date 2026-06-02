@@ -1,27 +1,38 @@
-# ai-marketplace
+# PyTorch AI Marketplace
 
-Claude Code plugin marketplace for PyTorch development tools. Provides debugging skills, specialized agents, and MCP server integrations for torch.compile and other PyTorch workflows.
+A curated collection of Claude Code plugins, skills, and agents for PyTorch development. This marketplace provides AI-powered tools for debugging, development, and optimization across the PyTorch ecosystem.
 
-This repository serves as both:
-1. **A working plugin** - Install directly to use torch.compile debugging tools
-2. **A marketplace template** - Example structure for publishing Claude Code plugins
+## What is This?
 
-## What This Repo Provides
+The PyTorch AI Marketplace is a **Claude Code plugin marketplace** that provides:
 
-**10 Skills:**
-- **torch.compile debugging**: `compile-overview`, `compile-bisect`, `compile-trace-dynamo`, `compile-trace-aot`, `compile-trace-inductor`
-- **PyTorch implementation**: `pytorch-dynamo`, `pytorch-aot`, `pytorch-inductor`
-- **Skill/agent development**: `skill-writer`, `agent-writer`
+- **Pre-built skills** - Ready-to-use AI capabilities for common PyTorch workflows
+- **Specialized agents** - Expert AI assistants for specific PyTorch subsystems
+- **MCP integrations** - Semantic search and tooling for PyTorch codebases
+- **Development tools** - Meta-skills for creating your own skills and agents
 
-**4 Specialized Agents:**
-- `compile-debug` - Multi-stage compilation debugging coordinator
-- `dynamo-expert` - Dynamo graph capture and tracing specialist
-- `aot-expert` - AOT Autograd functionalization and gradient specialist
-- `inductor-expert` - Inductor lowering and codegen specialist
+This marketplace serves the broader PyTorch community by packaging AI tools that understand PyTorch internals, debugging workflows, and development patterns.
 
-**MCP Server Integration:**
-- **steering** - Semantic search over PyTorch Dynamo, Inductor, and Functorch APIs
-- Auto-indexed on first use from PyTorch source
+## Available Tool Collections
+
+### torch.compile Debugging Tools
+
+Multi-agent system for PyTorch compiler development with 10 skills and 4 specialized agents.
+
+**Features:**
+- Stage-specific debugging (Dynamo, AOT Autograd, Inductor)
+- Automatic bisection for compilation failures
+- Semantic API search over PyTorch compiler modules
+- Implementation guidance for compiler development
+
+👉 **[Full documentation](TORCH_COMPILE_TOOLS.md)**
+
+### Coming Soon
+
+- **torchvision tools** - Image processing and computer vision workflows
+- **distributed training** - Multi-GPU and distributed debugging
+- **performance optimization** - Profiling and optimization workflows
+- **model analysis** - Architecture analysis and validation
 
 ## Installation
 
@@ -32,59 +43,52 @@ This repository serves as both:
 git clone https://github.com/morrison-turnansky/ai-marketplace.git
 cd ai-marketplace
 
-# Start Claude Code with the plugin
+# Start Claude Code with all marketplace plugins
 claude --plugin-dir .
 ```
 
-The plugin automatically (via SessionStart hook):
-- ✅ Installs required dependencies (`acp-steering-mcp`)
-- ✅ Indexes PyTorch modules on first use
-- ✅ Configures steering MCP server
-- ✅ Loads all 10 skills and 4 agents
+### Marketplace Install (Future)
 
-### Prerequisites
-
-1. **Claude Code** installed and configured
-2. **Python environment** with `uv` available
-3. **PyTorch source** (optional, for API documentation):
-   - If available at `/workspaces/pytorch-devcontainers/pytorch` or `~/pytorch`, indexing happens automatically
-   - Otherwise, set `PYTORCH_SRC` environment variable
-
-### Verify Installation
-
-After starting Claude Code:
+Once published:
 
 ```bash
-# Skills should be available
-# Type "/" to see autocomplete - look for compile-overview, pytorch-dynamo, etc.
-
-# Check that setup ran successfully
-# Look for console output about:
-#   - acp-steering-mcp installation
-#   - PyTorch module indexing
-```
-
-### Future: Marketplace Install
-
-Once the repo is public:
-
-```bash
+# Add the marketplace
 claude plugin marketplace add https://raw.githubusercontent.com/morrison-turnansky/ai-marketplace/main/.claude-marketplace/marketplace.json
+
+# Install specific tool collections
 claude plugin install ai-marketplace
 ```
 
-## Usage
+### Selective Installation
+
+To use only specific tools, configure in your `.claude/settings.json`:
+
+```json
+{
+  "plugins": {
+    "ai-marketplace": {
+      "enabled": true,
+      "source": {
+        "type": "directory",
+        "path": "/path/to/ai-marketplace"
+      }
+    }
+  }
+}
+```
+
+## Using Marketplace Tools
 
 ### Slash Commands
 
-When using `--plugin-dir`:
+Access skills directly:
 ```bash
-/compile-overview
-/pytorch-dynamo
-/compile-trace-inductor
+/compile-overview          # torch.compile pipeline reference
+/pytorch-dynamo           # Dynamo implementation guidance
+/skill-writer             # Create new skills
 ```
 
-When installed via marketplace:
+With marketplace namespace:
 ```bash
 /ai-marketplace:compile-overview
 /ai-marketplace:pytorch-dynamo
@@ -92,42 +96,88 @@ When installed via marketplace:
 
 ### Natural Language
 
-Skills load automatically based on context:
+Skills activate automatically based on context:
 ```
-"How do I debug a graph break in torch.compile?"
-"Why isn't my reduction fusing?"
-"Show me the Triton kernel for this code"
-```
-
-### Example Queries
-
-**torch.compile debugging:**
-```
-Why does this graph break? def fn(x): return x[x.item()]
-Show me the fusion decisions for this model
-Parse these TORCH_LOGS and explain what happened
-Bisect this compilation failure to find the exact failing op
+"Debug this torch.compile graph break"
+"How do I implement a new Dynamo VariableTracker?"
+"Bisect this compilation failure"
 ```
 
-**PyTorch API lookup (via steering MCP):**
+### Specialized Agents
+
+Delegate complex tasks to expert agents:
+- Use `compile-debug` agent for multi-stage compilation debugging
+- Use `dynamo-expert` for Dynamo-specific questions
+- Use `aot-expert` for AOT Autograd and gradient issues
+- Use `inductor-expert` for lowering and codegen
+
+## Repository Structure
+
 ```
-What are the parameters for Pointwise.__init__?
-How do I use SymInt in C++ code?
-Show me FakeTensor usage patterns
+ai-marketplace/
+├── .claude-plugin/          # Plugin metadata
+│   └── plugin.json          # Marketplace configuration
+├── .claude-marketplace/     # Marketplace listing
+│   └── marketplace.json     # Discovery and installation metadata
+├── agents/                  # Specialized AI agents
+│   └── *.md                 # Agent definitions
+├── skills/                  # User-invocable skills
+│   └── */SKILL.md          # Skill definitions
+├── scripts/                 # Setup and maintenance
+│   └── ensure-setup.sh      # Auto-install dependencies
+├── hooks.json              # Plugin lifecycle hooks
+├── settings.json           # MCP server configurations
+└── pyproject.toml          # Package metadata
 ```
 
-**PyTorch implementation work:**
-```
-How do I implement a new VariableTracker type?
-Where do I add a lowering for my custom op?
-What's the AOT partitioning algorithm?
-```
+## For Plugin Developers
 
-**Skill/agent development:**
-```
-/skill-writer - Create a new Claude Code skill
-/agent-writer - Create a specialized agent definition
-```
+This repository serves as a **reference implementation** for Claude Code plugin marketplace patterns:
+
+- **Plugin packaging** - See `.claude-plugin/plugin.json` for plugin structure
+- **Marketplace listing** - See `.claude-marketplace/marketplace.json` for discovery
+- **Skill development** - Use `/skill-writer` to create new skills
+- **Agent development** - Use `/agent-writer` to create specialized agents
+- **Auto-setup hooks** - See `hooks.json` and `scripts/ensure-setup.sh`
+
+### Creating Your Own Tools
+
+1. **Use the development skills:**
+   ```bash
+   /skill-writer    # Interactive skill creation
+   /agent-writer    # Interactive agent creation
+   ```
+
+2. **Study the examples:**
+   - `skills/compile-overview/` - Reference documentation skill
+   - `skills/compile-bisect/` - Interactive debugging skill
+   - `agents/compile-debug.md` - Multi-skill coordinator agent
+
+3. **See the architecture guide:**
+   - [REPO_ARCH.md](REPO_ARCH.md) - Plugin structure and patterns
+   - [CLAUDE.md](CLAUDE.md) - Code guidelines and testing
+
+## Documentation
+
+- **[TORCH_COMPILE_TOOLS.md](TORCH_COMPILE_TOOLS.md)** - torch.compile debugging tools documentation
+- **[REPO_ARCH.md](REPO_ARCH.md)** - Architecture and development guide
+- **[CLAUDE.md](CLAUDE.md)** - Code guidelines and testing
+
+## Contributing
+
+We welcome contributions of new tools, skills, and agents for the PyTorch ecosystem!
+
+**Adding new tool collections:**
+1. Create a new directory for your tool collection
+2. Add skills in `skills/` with descriptive SKILL.md files
+3. Add specialized agents in `agents/` if needed
+4. Update marketplace.json with your tool metadata
+5. Submit a PR with documentation
+
+**Improving existing tools:**
+- See individual tool documentation (e.g., TORCH_COMPILE_TOOLS.md)
+- Check REPO_ARCH.md for contribution guidelines
+- Follow code guidelines in CLAUDE.md
 
 ## Troubleshooting
 
@@ -142,48 +192,24 @@ claude --plugin-dir .
 ### Skills Not Found
 
 ```bash
-# Should show 10 SKILL.md files
+# List all available skills
 find skills -name "SKILL.md"
+
+# Check plugin configuration
+cat .claude-plugin/plugin.json
 ```
 
-### MCP Server Errors
+### Tool-Specific Issues
 
-```bash
-# Check if steering is installed
-which acp-steering-mcp
-
-# If not, install manually
-uv pip install git+https://github.com/ambient-code/steering.git
-```
-
-### Indexing Failed
-
-```bash
-# Check PyTorch source is available
-ls -la ~/pytorch/torch/_dynamo
-ls -la /workspaces/pytorch-devcontainers/pytorch/torch/_dynamo
-
-# If in a different location, set PYTORCH_SRC
-export PYTORCH_SRC=/path/to/pytorch
-```
-
-If PyTorch source is not available, API documentation will be limited but core debugging functionality still works.
-
-### Re-index PyTorch
-
-```bash
-# Remove existing indices
-rm -rf ~/.acp/repos/dynamo ~/.acp/repos/inductor ~/.acp/repos/functorch
-
-# Restart Claude Code to trigger re-indexing
-claude --plugin-dir .
-```
-
-## Documentation
-
-- **[REPO_ARCH.md](REPO_ARCH.md)** - Architecture, structure, and development guide
-- **[CLAUDE.md](CLAUDE.md)** - Code guidelines and testing
+See documentation for specific tool collections:
+- torch.compile tools: [TORCH_COMPILE_TOOLS.md](TORCH_COMPILE_TOOLS.md)
 
 ## License
 
-Part of the PyTorch devcontainer tooling.
+Part of the PyTorch devcontainer tooling. See [LICENSE](LICENSE) for details.
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/morrison-turnansky/ai-marketplace/issues)
+- **Documentation**: See individual tool documentation in this repository
+- **Contributing**: See [REPO_ARCH.md](REPO_ARCH.md) for guidelines

@@ -1,8 +1,8 @@
 {
   "name": "ai-marketplace",
-  "displayName": "PyTorch torch.compile Debugging",
+  "displayName": "PyTorch AI Marketplace",
   "version": "1.0.0",
-  "description": "Multi-agent debugging system for PyTorch compiler development. Provides stage-specific skills for Dynamo, AOT, and Inductor debugging with semantic API search.",
+  "description": "Curated collection of AI tools, skills, and agents for PyTorch development. Includes torch.compile debugging, semantic API search, and development workflows.",
   "skills": "./skills/",
   "agents": [
     "./agents/coordinator.md",

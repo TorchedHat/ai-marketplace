@@ -14,7 +14,7 @@ else
     QUIET="-q"
 fi
 
-echo "🔍 Checking torch-compile-ai dependencies..."
+echo "🔍 Checking ai-marketplace dependencies..."
 
 # 1. Check if acp-steering-mcp is installed
 if ! command -v acp-steering-mcp &> /dev/null; then
@@ -84,4 +84,4 @@ if [ "$NEEDS_INDEXING" = true ]; then
     fi
 fi
 
-echo "✅ torch-compile-ai ready!"
+echo "✅ ai-marketplace ready!"
