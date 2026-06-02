@@ -12,7 +12,7 @@
     "./agents/bisector.md",
     "./agents/compile-debug.md"
   ],
-  "hooks": "./hooks.json",
+  "hooks": "./hooks/",
   "author": {
     "name": "morrison-turnansky"
   },

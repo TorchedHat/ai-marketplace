@@ -85,3 +85,13 @@ if [ "$NEEDS_INDEXING" = true ]; then
 fi
 
 echo "✅ ai-marketplace ready!"
+
+# 3. Verify steering MCP server can see the indices
+# Note: MCP servers cache the index at startup, so if repos were just created,
+# the server needs to restart to pick them up
+if [ "$NEEDS_INDEXING" = true ]; then
+    echo ""
+    echo "📝 Note: Steering repositories were just created."
+    echo "   The MCP server may need to restart to pick them up."
+    echo "   If steering queries return 'No repositories found', restart Claude Code."
+fi
