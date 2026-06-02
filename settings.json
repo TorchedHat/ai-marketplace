@@ -9,11 +9,11 @@
     "debug-tracer": {
       "command": "python",
       "args": [
-        "/workspaces/pytorch-devcontainers/torch-compile-ai/server.py"
+        "/workspaces/pytorch-devcontainers/ai-marketplace/server.py"
       ],
-      "cwd": "/workspaces/pytorch-devcontainers/torch-compile-ai",
+      "cwd": "/workspaces/pytorch-devcontainers/ai-marketplace",
       "env": {
-        "PYTHONPATH": "/workspaces/pytorch-devcontainers/torch-compile-ai"
+        "PYTHONPATH": "/workspaces/pytorch-devcontainers/ai-marketplace"
       }
     }
   }

@@ -1,5 +1,5 @@
 {
-  "name": "torch-compile-ai",
+  "name": "ai-marketplace",
   "displayName": "PyTorch torch.compile Debugging",
   "version": "1.0.0",
   "description": "Multi-agent debugging system for PyTorch compiler development. Provides stage-specific skills for Dynamo, AOT, and Inductor debugging with semantic API search.",

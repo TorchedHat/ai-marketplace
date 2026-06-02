@@ -40,7 +40,7 @@ Create the directory and files:
 
 ```bash
 # Project
-mkdir -p ./torch-compile-ai/skills/skill-name
+mkdir -p ./ai-marketplace/skills/skill-name
 ```
 
 For multi-file Skills:

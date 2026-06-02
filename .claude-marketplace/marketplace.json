@@ -1,12 +1,12 @@
 {
-  "name": "torch-compile-ai-marketplace",
+  "name": "ai-marketplace",
   "displayName": "PyTorch torch.compile Debugging Tools",
   "description": "Multi-agent debugging system for PyTorch compiler development with stage-specific skills and semantic API search",
   "plugins": {
-    "torch-compile-ai": {
+    "ai-marketplace": {
       "source": {
         "type": "github",
-        "repo": "morrison-turnansky/torch-compile-ai"
+        "repo": "morrison-turnansky/ai-marketplace"
       }
     }
   }

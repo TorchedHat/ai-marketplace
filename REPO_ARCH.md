@@ -7,7 +7,7 @@ Claude Code plugin for PyTorch torch.compile debugging. Provides 8 skills, 5 age
 ## Project Structure
 
 ```
-torch-compile-ai/
+ai-marketplace/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin manifest
 │
@@ -57,8 +57,8 @@ torch-compile-ai/
 
 **Installation:**
 ```bash
-git clone https://github.com/morrison-turnansky/torch-compile-ai.git
-cd torch-compile-ai
+git clone https://github.com/morrison-turnansky/ai-marketplace.git
+cd ai-marketplace
 claude --plugin-dir .
 ```
 
@@ -87,7 +87,7 @@ claude --plugin-dir .
 
 **Skill Naming:**
 - When using `--plugin-dir`: `/skill-name` (no namespace)
-- When installed via marketplace: `/torch-compile-ai:skill-name`
+- When installed via marketplace: `/ai-marketplace:skill-name`
 
 ### Agent Organization
 
@@ -220,7 +220,7 @@ Update these files when making structural changes or adding new skills/agents.
 Once repo is public:
 ```bash
 claude plugin marketplace add https://raw.githubusercontent.com/.../marketplace.json
-claude plugin install torch-compile-ai
+claude plugin install ai-marketplace
 ```
 
 ### Additional Skills

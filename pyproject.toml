@@ -1,5 +1,5 @@
 [project]
-name = "torch-compile-ai"
+name = "ai-marketplace"
 version = "0.1.0"
 description = "MCP server for parsing torch.compile debug output across all pipeline stages"
 readme = "README.md"

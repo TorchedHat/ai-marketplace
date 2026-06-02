@@ -86,7 +86,7 @@ Provide output in this format:
 
 ```yaml
 name: code-reviewer
-name: torch-compile-ai:compile-debug  # Plugin namespace
+name: ai-marketplace:compile-debug  # Plugin namespace
 ```
 
 **description:**

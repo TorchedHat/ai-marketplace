@@ -1,4 +1,4 @@
-# torch-compile-ai - Code Guidelines
+# ai-marketplace - Code Guidelines
 
 ## Purpose
 

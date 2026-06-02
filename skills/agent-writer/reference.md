@@ -14,7 +14,7 @@ Detailed documentation for all agent frontmatter fields, advanced patterns, and 
 
 ```yaml
 name: code-reviewer
-name: torch-compile-ai:compile-debug  # Plugin namespace
+name: ai-marketplace:compile-debug  # Plugin namespace
 ```
 
 **description:**

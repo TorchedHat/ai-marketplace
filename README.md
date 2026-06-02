@@ -1,4 +1,4 @@
-# torch-compile-ai
+# ai-marketplace
 
 Multi-agent debugging system for PyTorch torch.compile development. Provides stage-specific skills, specialized agents, and semantic API search for Dynamo, AOT Autograd, and Inductor.
 
@@ -22,8 +22,8 @@ Multi-agent debugging system for PyTorch torch.compile development. Provides sta
 
 ```bash
 # Clone the repository
-git clone https://github.com/morrison-turnansky/torch-compile-ai.git
-cd torch-compile-ai
+git clone https://github.com/morrison-turnansky/ai-marketplace.git
+cd ai-marketplace
 
 # Start Claude Code with the plugin
 claude --plugin-dir .
@@ -62,8 +62,8 @@ After starting Claude Code:
 Once the repo is public:
 
 ```bash
-claude plugin marketplace add https://raw.githubusercontent.com/morrison-turnansky/torch-compile-ai/main/.claude-marketplace/marketplace.json
-claude plugin install torch-compile-ai
+claude plugin marketplace add https://raw.githubusercontent.com/morrison-turnansky/ai-marketplace/main/.claude-marketplace/marketplace.json
+claude plugin install ai-marketplace
 ```
 
 ## Usage
@@ -79,8 +79,8 @@ When using `--plugin-dir`:
 
 When installed via marketplace:
 ```bash
-/torch-compile-ai:compile-overview
-/torch-compile-ai:pytorch-dynamo
+/ai-marketplace:compile-overview
+/ai-marketplace:pytorch-dynamo
 ```
 
 ### Natural Language
@@ -118,7 +118,7 @@ Where do I add a lowering for my custom op?
 ### Plugin Not Loading
 
 ```bash
-cd /path/to/torch-compile-ai
+cd /path/to/ai-marketplace
 ls -la .claude-plugin/plugin.json  # Should exist
 claude --plugin-dir .
 ```
