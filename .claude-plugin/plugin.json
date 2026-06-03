@@ -5,14 +5,11 @@
   "description": "Curated collection of AI tools, skills, and agents for PyTorch development. Includes torch.compile debugging, semantic API search, and development workflows.",
   "skills": "./skills/",
   "agents": [
-    "./agents/coordinator.md",
     "./agents/dynamo-expert.md",
     "./agents/aot-expert.md",
     "./agents/inductor-expert.md",
-    "./agents/bisector.md",
     "./agents/compile-debug.md"
   ],
-  "hooks": "./hooks/",
   "author": {
     "name": "morrison-turnansky"
   },
@@ -30,7 +27,7 @@
   ],
   "mcpServers": {
     "steering": {
-      "command": "/home/dev/.venv/bin/acp-steering-mcp",
+      "command": "acp-steering-mcp",
       "args": [],
       "env": {}
     }

@@ -16,13 +16,47 @@ fi
 
 echo "🔍 Checking ai-marketplace dependencies..."
 
+# Debug: Show PATH and which python/pip we're using
+echo "  Python: $(command -v python3 || echo 'not found')"
+echo "  Pip: $(command -v pip || echo 'not found')"
+echo "  UV: $(command -v uv || echo 'not found')"
+
 # 1. Check if acp-steering-mcp is installed
 if ! command -v acp-steering-mcp &> /dev/null; then
     echo "📦 Installing acp-steering-mcp..."
-    uv pip install $QUIET "git+https://github.com/ambient-code/steering.git" 2>/dev/null || {
-        echo "⚠️  Failed to install acp-steering-mcp (API lookups will be limited)"
+
+    # Try uv first, fall back to pip
+    if command -v uv &> /dev/null; then
+        # Use virtual env if active, otherwise install system-wide
+        if [ -n "$VIRTUAL_ENV" ]; then
+            uv pip install $QUIET "git+https://github.com/ambient-code/steering.git" 2>/dev/null || {
+                echo "⚠️  Failed to install acp-steering-mcp (API lookups will be limited)"
+                exit 0  # Non-blocking
+            }
+        else
+            uv pip install --system $QUIET "git+https://github.com/ambient-code/steering.git" 2>/dev/null || {
+                echo "⚠️  Failed to install acp-steering-mcp (API lookups will be limited)"
+                exit 0  # Non-blocking
+            }
+        fi
+    elif command -v pip &> /dev/null; then
+        pip install $QUIET "git+https://github.com/ambient-code/steering.git" 2>/dev/null || {
+            echo "⚠️  Failed to install acp-steering-mcp (API lookups will be limited)"
+            exit 0  # Non-blocking
+        }
+    else
+        echo "⚠️  Neither uv nor pip found - cannot install acp-steering-mcp"
         exit 0  # Non-blocking
-    }
+    fi
+
+    # Verify installation
+    if command -v acp-steering-mcp &> /dev/null; then
+        echo "  ✓ acp-steering-mcp installed at: $(command -v acp-steering-mcp)"
+    else
+        echo "  ✗ acp-steering-mcp installation failed or not in PATH"
+    fi
+else
+    echo "  ✓ acp-steering-mcp found at: $(command -v acp-steering-mcp)"
 fi
 
 # 2. Check if PyTorch indices exist

@@ -24,7 +24,7 @@
       "source": {
         "source": "url",
         "url": "https://github.com/TorchedHat/torchtalk.git",
-        "ref": "main"
+        "ref": "add-plugin"
       }
     }
   ]
