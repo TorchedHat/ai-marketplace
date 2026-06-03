@@ -16,6 +16,16 @@
         "url": "https://github.com/morrison-turnansky/ai-marketplace.git",
         "ref": "main"
       }
+    },
+    {
+      "name": "torchtalk",
+      "description": "MCP server for conversational PyTorch codebase analysis: trace Python->C++->CUDA binding chains, impact analysis, dispatch mapping, call-graph visualization, and test discovery across the PyTorch source.",
+      "category": "development",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/TorchedHat/torchtalk.git",
+        "ref": "main"
+      }
     }
   ]
 }
