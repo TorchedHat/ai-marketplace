@@ -33,10 +33,11 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 
 ```bash
 # Add the marketplace (one-time setup)
-claude plugin marketplace add morrison-turnansky/ai-marketplace
+claude plugin marketplace add TorchedHat/ai-marketplace
 
-# Install the plugin
+# Install the plugin(s)
 claude plugin install ai-marketplace
+claude plugin install torchtalk
 
 # Or from inside Claude Code
 /plugin marketplace add morrison-turnansky/ai-marketplace
@@ -82,9 +83,7 @@ With marketplace namespace:
 
 Skills activate automatically based on context:
 ```
-"Debug this torch.compile graph break"
-"How do I implement a new Dynamo VariableTracker?"
-"Bisect this compilation failure"
+"Use the debug agent to debug code at file-name.py"
 ```
 
 ### Specialized Agents
@@ -94,24 +93,6 @@ Delegate complex tasks to expert agents:
 - Use `dynamo-expert` for Dynamo-specific questions
 - Use `aot-expert` for AOT Autograd and gradient issues
 - Use `inductor-expert` for lowering and codegen
-
-## Repository Structure
-
-```
-ai-marketplace/
-├── .claude-plugin/          # Plugin metadata
-│   ├── plugin.json          # Plugin configuration
-│   └── marketplace.json     # Marketplace discovery metadata
-├── agents/                  # Specialized AI agents
-│   └── *.md                 # Agent definitions
-├── skills/                  # User-invocable skills
-│   └── */SKILL.md          # Skill definitions
-├── scripts/                 # Setup and maintenance
-│   └── ensure-setup.sh      # Auto-install dependencies
-├── hooks.json              # Plugin lifecycle hooks
-├── settings.json           # MCP server configurations
-└── pyproject.toml          # Package metadata
-```
 
 ## For Plugin Developers
 
