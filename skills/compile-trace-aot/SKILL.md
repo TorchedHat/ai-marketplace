@@ -1,6 +1,6 @@
 ---
 name: compile-trace-aot
-description: Debug PyTorch AOT Autograd stage - functionalization, decompositions, joint forward+backward graph (when requires_grad=True), partitioning/recomputation, and post-grad passes. Covers TORCH_LOGS for aot/aot_graphs/aot_joint_graph/post_grad_graphs, interpreting AOT graph files, debugging gradient computation, memory optimization, and post-grad fusion (GEMM, attention). Load after compile-bisect indicates backend='aot_*'.
+description: Debug PyTorch AOT Autograd stage - functionalization, decompositions, IR transformations, joint forward+backward graph (when requires_grad=True), partitioning/recomputation, and post-grad passes. Use for tracing AOT stage and understanding decomposition application.
 ---
 
 # Tracing AOT Autograd Stage - Training Transformations
@@ -194,18 +194,20 @@ graph():
 
 ### What Functionalization Does
 
-**Before**:
+**Creates Core ATen IR** - removes mutations and aliases to produce functional graph.
+
+**Before** (Full ATen IR):
 ```python
 def f(x):
     x.mul_(2)      # In-place mutation
     return x.add(1)
 ```
 
-**After Functionalization**:
+**After** (Core ATen IR):
 ```python
 def f(x):
-    x_updated = x.mul(2)   # Out-of-place
-    return x_updated.add(1)
+    x_new = x * 2  # Functional
+    return x_new + 1
 # x.mul_() mutation tracked in metadata, applied at runtime
 ```
 

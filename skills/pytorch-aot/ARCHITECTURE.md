@@ -424,6 +424,52 @@ For detailed API docs, query steering:
 - `query_api_docs(query="FunctionalTensor")` - Functionalization internals
 - `query_api_docs(query="min_cut")` - Partitioning algorithms
 
+## IR Transformation
+
+AOT transforms graphs through multiple IR levels:
+
+### Stage 2.1: Functionalization
+
+**Input**: Full ATen IR (may have mutations like `x.add_()`)
+
+**Output**: **Core ATen IR** (functional: `x = x + 1`)
+
+**Mechanism**: FunctionalTensor wrapping, ViewMeta tracking
+
+**What it does**: Removes in-place mutations and aliases to produce a functional graph. This is WHY Core ATen IR is functional - functionalization creates it.
+
+### Stage 2.2: Decompositions
+
+**Input**: Core ATen IR
+
+**Applies**: `core_aten_decompositions()` from `torch/_decomp/__init__.py`
+
+**Output**: Simpler Core ATen ops (some may decompose to prims)
+
+**Examples**:
+- `silu` → `x * sigmoid(x)`
+- `gelu` → erf-based formula
+
+### Key files
+
+- `torch/_decomp/__init__.py`: `core_aten_decompositions()`
+- `torch/export/decomp_utils.py`: CustomDecompTable
+- `torch/_functorch/_aot_autograd/graph_compile.py`: Application point
+
+### Core ATen ops
+
+- Marked with `tags: core` in `native_functions.yaml`
+- These ARE Core ATen IR - the functional subset
+- CompositeImplicitAutograd ops decompose TO these core ops
+
+### Refs, Prims, and Decompositions
+
+- **Prims** (`torch._prims`): Primitive operations (e.g., `prims.add`, `prims.mul`)
+- **Refs** (`torch._refs`): Python reference implementations that use prims; register themselves as decompositions via `@register_decomposition`
+- **Decomps** (`torch._decomp/decompositions.py`): Manual decompositions
+- **Key insight**: Refs ARE decompositions, not a separate category
+- **No duplicates**: `torch/_decomp/__init__.py` raises `RuntimeError` if same op registered twice
+
 ---
 
 **Next**: See `COMMON-PATTERNS.md` for implementation patterns and code examples.

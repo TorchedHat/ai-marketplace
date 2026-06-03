@@ -642,6 +642,61 @@ TorchInductor's architecture enables:
 7. **Layout flexibility**: Optimizer chooses best layout
 8. **Multi-backend**: Pluggable codegen for different hardware
 
+## Decomposition and Lowering Pipeline
+
+**Decompositions run FIRST** (in AOT Autograd), then lowerings (in Inductor):
+
+### Pipeline architecture
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  AOT Autograd (compile_fx.py)                                  │
+│  - Creates Core ATen IR via functionalization                  │
+│  - Applies core_aten_decompositions() (Full ATen → Core ATen)  │
+│  - Applies inductor_decompositions (some ops → Prims)          │
+└────────────────────────────────────────────────────────────────┘
+                            ↓
+┌────────────────────────────────────────────────────────────────┐
+│  Inductor Graph Lowerings (graph.py call_function)             │
+│  - Processes post-decomposition graph                          │
+│  - Lowerings generate IR nodes (Buffer, Pointwise, Reduction)  │
+│  - Fallback to extern kernel if no lowering exists             │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Pipeline order
+
+1. **AOT Decompositions** - Applied to FX graph before Inductor sees it
+2. **Inductor Lowerings** - Process the post-decomposition graph
+3. **Fallback/Extern Kernel** - Last resort when no lowering exists
+
+### When ops have both decomposition and lowering
+
+- Decomposition runs first in AOT stage for preprocessing/normalization
+- If decomposition returns `NotImplemented`, op stays in graph
+- Inductor lowering then generates IR for that op
+
+### Example: aten.full
+
+**Decomposition (AOT stage)**: Infers dtype if missing, returns `NotImplemented` if dtype present
+
+**Lowering (Inductor stage)**: Assumes dtype is set, generates IR via `tensor_constructor()`
+
+**Flow**: decomposition preprocesses → lowering generates IR
+
+### Key insight
+
+Decompositions transform the graph structure; lowerings generate loop-level IR.
+
+### Key files
+
+- `torch/_inductor/compile_fx.py`: AOT applies decompositions
+- `torch/_inductor/graph.py`: `call_function()` dispatches to lowerings
+- `torch/_inductor/lowering.py`: Lowering registrations
+- `torch/_inductor/decomposition.py`: Inductor-specific decompositions
+
+---
+
 **For practical patterns and examples**: See [COMMON-PATTERNS.md](COMMON-PATTERNS.md)
 
 **For debugging help**: See [DEBUGGING-GUIDE.md](DEBUGGING-GUIDE.md)

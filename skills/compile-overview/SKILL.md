@@ -1,6 +1,6 @@
 ---
 name: compile-overview
-description: Reference documentation for torch.compile pipeline architecture, stages, TORCH_LOGS flags, output files, and debugging tools. Use for understanding pipeline structure and available debugging options.
+description: Reference documentation for torch.compile pipeline architecture, IR levels (Full ATen, Core ATen, Prims), stages, TORCH_LOGS flags, output files, and debugging tools. Use for understanding pipeline structure, operator IRs, and available debugging options.
 ---
 
 # torch.compile Pipeline Reference
@@ -39,9 +39,30 @@ GPU/CPU Execution
 
 | Stage | Input | Output | Key Operations | Skills |
 |-------|-------|--------|----------------|--------|
-| **Dynamo** | Python bytecode | FX graph (aten ops) | Capture, guards, pre-grad passes | `compile-trace-dynamo`, `pytorch-dynamo` |
-| **AOT** | FX graph | FX graph (decomposed) | Functionalization, partitioning, post-grad passes | `compile-trace-aot` |
-| **Inductor** | FX graph | Kernel code | Lowering, fusion, scheduling, codegen | `compile-trace-inductor`, `pytorch-inductor` |
+| **Dynamo** | Python bytecode | FX graph (Full ATen IR) | Capture, guards, pre-grad passes | `compile-trace-dynamo`, `pytorch-dynamo` |
+| **AOT** | FX graph (Full ATen) | FX graph (Core ATen IR) | Functionalization, decompositions, partitioning, post-grad passes | `compile-trace-aot`, `pytorch-aot` |
+| **Inductor** | FX graph (Core ATen) | Kernel code | Lowering, fusion, scheduling, codegen | `compile-trace-inductor`, `pytorch-inductor` |
+
+## Operator IR Hierarchy
+
+torch.compile transforms operations through multiple **operator-level IR layers**. These are distinct from Inductor's loop-level IR, Scheduler IR, and Triton IR (covered in pytorch-inductor skill).
+
+| Operator IR Level | Description | Created By |
+|-------------------|-------------|------------|
+| **Full ATen IR** | Complete ATen API (includes in-place, out variants) | Dynamo graph capture |
+| **Core ATen IR** | Functional subset, no mutations/aliases | AOT functionalization |
+| **Prims IR** | Primitive operators with explicit broadcasting | Decompositions |
+
+**Operator transformation pipeline:**
+```
+Full ATen (Dynamo output)
+    ↓ Functionalization (AOT Stage 2)
+Core ATen (functional ops)
+    ↓ Decompositions (AOT + Inductor)
+Prims or simpler Core ATen
+    ↓ Lowerings (Inductor)
+Inductor IR (loop-level: Buffer, Pointwise, Reduction, etc.)
+```
 
 ## TORCH_LOGS Flags
 

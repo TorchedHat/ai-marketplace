@@ -1,6 +1,6 @@
 ---
 name: pytorch-aot
-description: Expert guidance for PyTorch functorch and AOT Autograd development. Covers torch/_functorch architecture, AOT Autograd pipeline (functionalization, joint graphs, partitioning, post-grad passes), vmap/batching, functional transforms (grad, vjp, jvp, jacrev, jacfwd), make_functional, functional_call, activation checkpointing, and implementation patterns. Use for implementing AOT features, understanding functorch internals, and adding functionalization/partitioning support. For debugging, use compile-trace-aot.
+description: Expert guidance for PyTorch functorch and AOT Autograd development. Covers torch/_functorch architecture, AOT Autograd pipeline (functionalization, IR transformations - Full ATen → Core ATen, joint graphs, partitioning, post-grad passes), vmap/batching, functional transforms (grad, vjp, jvp, jacrev, jacfwd), make_functional, functional_call, activation checkpointing, decompositions, and implementation patterns. Use for implementing AOT features, understanding functorch internals, Core ATen IR creation, and adding functionalization/partitioning support. For debugging, use compile-trace-aot.
 ---
 
 # PyTorch Functorch & AOT Autograd Development
@@ -55,6 +55,12 @@ AOT transforms FX graphs for training: removes mutations (functionalization), cr
 4. **Post-Grad Passes**: Optimize both graphs (GEMM fusion, Conv-BN fusion, etc.)
 
 **Key insight**: AOT sees the entire training computation at once, enabling cross-forward/backward optimizations impossible in eager mode.
+
+### IR Transformation in AOT
+
+AOT transforms graphs through operator-level IRs: Full ATen → Core ATen → Prims.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md#ir-transformation) for complete details on functionalization, decompositions, and Core ATen IR creation.
 
 ### Functionalization
 

@@ -1,6 +1,6 @@
 ---
 name: pytorch-inductor
-description: Expert guidance for PyTorch Inductor compiler backend development and optimization. Covers FX graph lowering, kernel fusion, Triton codegen, TritonTemplate, TritonTemplateKernel, template system, Jinja2 templates, C++ codegen, scheduling, memory planning, select_algorithm, autotuning, and performance optimization.
+description: Expert guidance for PyTorch Inductor compiler backend development and optimization. Covers FX graph lowering, decomposition→lowering pipeline, kernel fusion, Triton codegen, TritonTemplate, TritonTemplateKernel, template system, Jinja2 templates, C++ codegen, scheduling, memory planning, select_algorithm, autotuning, IR nodes (Buffer, Pointwise, Reduction), and performance optimization. Use for understanding Inductor architecture, lowering vs decomposition order, and performance optimization.
 ---
 
 # PyTorch Inductor Expert
@@ -181,6 +181,12 @@ Determines buffer lifetimes and enables buffer reuse to minimize memory footprin
 │              Compiled Module (ready to execute)                │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+## Decomposition and Lowering Pipeline
+
+Decompositions run in AOT stage, then Inductor lowerings process the post-decomposition graph.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md#decomposition-and-lowering-pipeline) for complete details on pipeline order and preprocessing patterns.
 
 ## Key Files Quick Map
 
