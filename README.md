@@ -36,12 +36,8 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 claude plugin marketplace add TorchedHat/ai-marketplace
 
 # Install the plugin(s)
-claude plugin install ai-marketplace
+claude plugin install torch-compile
 claude plugin install torchtalk
-
-# Or from inside Claude Code
-/plugin marketplace add morrison-turnansky/ai-marketplace
-/plugin install ai-marketplace
 ```
 
 ### Selective Installation
@@ -51,7 +47,7 @@ To use only specific tools, configure in your `.claude/settings.json`:
 ```json
 {
   "plugins": {
-    "ai-marketplace": {
+    "torch-compile": {
       "enabled": true,
       "source": {
         "type": "directory",
@@ -71,12 +67,6 @@ Access skills directly:
 /compile-overview          # torch.compile pipeline reference
 /pytorch-dynamo           # Dynamo implementation guidance
 /skill-writer             # Create new skills
-```
-
-With marketplace namespace:
-```bash
-/ai-marketplace:compile-overview
-/ai-marketplace:pytorch-dynamo
 ```
 
 ### Natural Language
@@ -142,6 +132,39 @@ We welcome contributions of new tools, skills, and agents for the PyTorch ecosys
 - See individual tool documentation (e.g., TORCH_COMPILE_TOOLS.md)
 - Check REPO_ARCH.md for contribution guidelines
 - Follow code guidelines in CLAUDE.md
+
+## Troubleshooting
+
+### MCP Server Errors
+
+```bash
+# Check if steering is installed
+which acp-steering-mcp
+
+# If not, install manually
+uv pip install git+https://github.com/ambient-code/steering.git
+```
+
+### Indexing Failed
+
+```bash
+# Verify PyTorch is installed
+python3 -c "import torch; print(torch.__file__)"
+
+# If PyTorch is installed from source, indexing should auto-detect it
+# Override auto-detection if needed:
+export PYTORCH_PATH=/path/to/pytorch
+```
+
+### Re-index PyTorch
+
+```bash
+# Remove existing indices
+rm -rf ~/.acp/repos/dynamo ~/.acp/repos/inductor ~/.acp/repos/functorch
+
+# Restart Claude Code to trigger re-indexing
+claude --plugin-dir .
+```
 
 ## License
 

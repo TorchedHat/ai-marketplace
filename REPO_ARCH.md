@@ -37,46 +37,8 @@ ai-marketplace/
 - Indexes PyTorch modules (dynamo, inductor, functorch)
 - Runs via `scripts/ensure-setup.sh`
 
-### Skill Organization
-
-**Three Skill Types:**
-
-1. **Meta Skills** - Workflow guidance
-   - `compile-overview`: Pipeline overview & bisect-first workflow
-   - `compile-bisect`: Automated failure isolation
-
-2. **Tracing Skills** - User-level debugging
-   - `compile-trace-dynamo`: TORCH_LOGS, graph breaks, FX graphs
-   - `compile-trace-aot`: Functionalization, partitioning
-   - `compile-trace-inductor`: Fusion decisions, scheduling, codegen
-
-3. **Implementation Skills** - Contributor-level internals
-   - `pytorch-dynamo`: VariableTracker, guards, bytecode tracing
-   - `pytorch-aot`: vmap, functionalization, AOT pipeline
-   - `pytorch-inductor`: Lowerings, scheduler, Triton templates
-
 **Skill Naming:**
-- `/ai-marketplace:skill-name`
-
-### Agent Organization
-
-**Four Specialist Agents:**
-
-1. **compile-debug** - Orchestrates torch.compile debugging workflow
-   - Routes to stage-specific experts based on bisection results
-   - Coordinates multi-stage debugging
-
-2. **dynamo-expert** - Dynamo debugging
-   - Skills: pytorch-dynamo, compile-trace-dynamo
-   - Handles graph breaks, guards, VariableTracker
-
-3. **aot-expert** - AOT debugging
-   - Skills: pytorch-aot, compile-trace-aot
-   - Handles functionalization, decomposition, partitioning
-
-4. **inductor-expert** - Inductor debugging
-   - Skills: pytorch-inductor, compile-trace-inductor
-   - Handles lowerings, fusion, Triton codegen
+- `/torch-compile:skill-name`
 
 **Agent Definition Format:**
 ```yaml
@@ -122,6 +84,13 @@ All dependencies installed automatically via SessionStart hook. No manual setup 
 
 ### Adding a New Skill
 
+**Skill/agent development:**
+```
+/skill-writer - Create a new Claude Code skill
+/agent-writer - Create a specialized agent definition
+```
+
+
 1. Create directory in `skills/`:
 ```bash
 mkdir skills/my-new-skill
@@ -137,29 +106,6 @@ description: Brief description
 # Skill Content
 ...
 ```
-
-3. Restart Claude Code - skill auto-discovered
-
-### Adding a New Agent
-
-1. Create file in `agents/`:
-```bash
-touch agents/my-agent.md
-```
-
-2. Add YAML frontmatter:
-```yaml
----
-name: my-agent
-skills:
-  - skill-one
-  - skill-two
----
-# Agent prompt...
-```
-
-3. Restart Claude Code - agent auto-discovered
-
 ### Updating Documentation
 
 Documentation files:

@@ -48,12 +48,6 @@ When using `--plugin-dir`:
 /compile-trace-inductor
 ```
 
-When installed via marketplace:
-```bash
-/ai-marketplace:compile-overview
-/ai-marketplace:pytorch-dynamo
-```
-
 ### Natural Language
 
 Skills load automatically based on context:
@@ -67,10 +61,8 @@ Skills load automatically based on context:
 
 **torch.compile debugging:**
 ```
-Why does this graph break? def fn(x): return x[x.item()]
-Show me the fusion decisions for this model
-Parse these TORCH_LOGS and explain what happened
-Bisect this compilation failure to find the exact failing op
+Use the torch compile debugging agent to debeug repro.py and file
+a report at /path.
 ```
 
 **PyTorch API lookup (via steering MCP):**
@@ -87,19 +79,13 @@ Where do I add a lowering for my custom op?
 What's the AOT partitioning algorithm?
 ```
 
-**Skill/agent development:**
-```
-/skill-writer - Create a new Claude Code skill
-/agent-writer - Create a specialized agent definition
-```
-
 ## Prerequisites
 
 1. **Claude Code** installed and configured
 2. **Python environment** with `uv` available
-3. **PyTorch source** (optional, for API documentation):
-   - If available at `/workspaces/pytorch-devcontainers/pytorch` or `~/pytorch`, indexing happens automatically
-   - Otherwise, set `PYTORCH_SRC` environment variable
+3. **PyTorch source** (required for API documentation):
+   - Auto-detected from your Python environment if PyTorch is installed from source
+   - Override with `PYTORCH_PATH` environment variable if needed
 
 ## Automatic Setup
 
@@ -109,40 +95,6 @@ The plugin automatically (via SessionStart hook):
 - ✅ Configures steering MCP server
 - ✅ Loads all 10 skills and 4 agents
 
-## Troubleshooting
-
-### MCP Server Errors
-
-```bash
-# Check if steering is installed
-which acp-steering-mcp
-
-# If not, install manually
-uv pip install git+https://github.com/ambient-code/steering.git
-```
-
-### Indexing Failed
-
-```bash
-# Check PyTorch source is available
-ls -la ~/pytorch/torch/_dynamo
-ls -la /workspaces/pytorch-devcontainers/pytorch/torch/_dynamo
-
-# If in a different location, set PYTORCH_SRC
-export PYTORCH_SRC=/path/to/pytorch
-```
-
-If PyTorch source is not available, API documentation will be limited but core debugging functionality still works.
-
-### Re-index PyTorch
-
-```bash
-# Remove existing indices
-rm -rf ~/.acp/repos/dynamo ~/.acp/repos/inductor ~/.acp/repos/functorch
-
-# Restart Claude Code to trigger re-indexing
-claude --plugin-dir .
-```
 
 ## Architecture
 
