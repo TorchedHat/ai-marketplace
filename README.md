@@ -15,6 +15,11 @@ The PyTorch AI Marketplace is a **Claude Code plugin marketplace** that provides
 
 This marketplace serves the broader PyTorch community by packaging AI tools that understand PyTorch internals, debugging workflows, and development patterns.
 
+## Contributing
+
+We welcome contributions of new tools, skills, and agents!
+See - **Contributing**: See [REPO_ARCH.md](REPO_ARCH.md) for guidelines
+
 ## Available Tool Collections
 
 ### torch.compile Debugging Tools
@@ -39,24 +44,6 @@ claude plugin marketplace add TorchedHat/ai-marketplace
 claude plugin install ai-writer
 claude plugin install torch-compile
 claude plugin install torchtalk
-```
-
-### Selective Installation
-
-To use only specific tools, configure in your `.claude/settings.json`:
-
-```json
-{
-  "plugins": {
-    "torch-compile": {
-      "enabled": true,
-      "source": {
-        "type": "directory",
-        "path": "/path/to/ai-marketplace"
-      }
-    }
-  }
-}
 ```
 
 ## Using Marketplace Tools
@@ -93,24 +80,8 @@ This repository serves as a **reference implementation** for Claude Code plugin 
 - **Marketplace listing** - See `.claude-plugin/marketplace.json` for discovery
 - **Skill development** - Use `/skill-writer` to create new skills
 - **Agent development** - Use `/agent-writer` to create specialized agents
+- **Plugin development** - Use `/plugin-writer` to create specialized agents
 - **Auto-setup hooks** - See `hooks.json` and `scripts/ensure-setup.sh`
-
-### Creating Your Own Tools
-
-1. **Use the development skills:**
-   ```bash
-   /skill-writer    # Interactive skill creation
-   /agent-writer    # Interactive agent creation
-   ```
-
-2. **Study the examples:**
-   - `skills/compile-overview/` - Reference documentation skill
-   - `skills/compile-bisect/` - Interactive debugging skill
-   - `agents/compile-debug.md` - Multi-skill coordinator agent
-
-3. **See the architecture guide:**
-   - [REPO_ARCH.md](REPO_ARCH.md) - Plugin structure and patterns
-   - [CLAUDE.md](CLAUDE.md) - Code guidelines and testing
 
 ## Documentation
 
@@ -118,10 +89,6 @@ This repository serves as a **reference implementation** for Claude Code plugin 
 - **[REPO_ARCH.md](REPO_ARCH.md)** - Architecture and development guide
 - **[CLAUDE.md](CLAUDE.md)** - Code guidelines and testing
 
-## Contributing
-
-We welcome contributions of new tools, skills, and agents!
-See - **Contributing**: See [REPO_ARCH.md](REPO_ARCH.md) for guidelines
 
 ## Troubleshooting
 
