@@ -1,0 +1,183 @@
+{
+  "version": "1.0.0",
+  "skills": {
+    "skill-developer": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "skill",
+          "create skill",
+          "add skill",
+          "skill-rules.json",
+          "skill activation",
+          "hook",
+          "UserPromptSubmit",
+          "PreToolUse",
+          "trigger pattern",
+          "progressive disclosure",
+          "500-line rule"
+        ],
+        "intentPatterns": [
+          "(create|add|write|make).*(skill|hook)",
+          "(modify|update|edit).*skill-rules",
+          "(debug|fix|troubleshoot).*(skill.*activation|hook)",
+          "skill.*(trigger|pattern|activation)",
+          "how.*skill.*(work|activate)"
+        ]
+      },
+      "fileTriggers": {
+        "paths": [
+          "**/.claude/skills/**",
+          "**/.claude/hooks/**",
+          "**/skill-rules.json",
+          "**/.claude/settings.json"
+        ],
+        "contentPatterns": [
+          "---\\s*name:",
+          "\"promptTriggers\":",
+          "\"fileTriggers\":",
+          "UserPromptSubmit",
+          "PreToolUse"
+        ]
+      }
+    },
+    "pytorch-dynamo": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "dynamo",
+          "torch.compile",
+          "eval_frame",
+          "InstructionTranslator",
+          "VariableTracker",
+          "OutputGraph",
+          "guard failure",
+          "symbolic execution",
+          "bytecode tracing",
+          "AOTAutograd",
+          "frame interception"
+        ],
+        "intentPatterns": [
+          "(debug|fix|investigate).*(dynamo|torch\\.compile|guard.*failure)",
+          "(implement|add).*(opcode|VariableTracker)",
+          "bytecode.*(trace|symbolic|execution)",
+          "compilation.*(error|issue|failure)"
+        ]
+      },
+      "fileTriggers": {
+        "paths": [
+          "**/torch/_dynamo/**",
+          "**/test/dynamo/**",
+          "**/torch/_functorch/aot_autograd.py"
+        ],
+        "contentPatterns": [
+          "from torch._dynamo",
+          "import.*InstructionTranslator",
+          "class.*VariableTracker",
+          "torch\\.compile\\("
+        ]
+      }
+    },
+    "pytorch-inductor": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "inductor",
+          "torch._inductor",
+          "lowering",
+          "scheduler",
+          "kernel fusion",
+          "triton",
+          "TritonTemplate",
+          "TritonTemplateKernel",
+          "TritonTemplateCaller",
+          "template system",
+          "select_algorithm",
+          "codegen",
+          "memory planning",
+          "buffer reuse",
+          "pointwise fusion",
+          "reduction fusion",
+          "IR nodes",
+          "code generation",
+          "auto-tuning",
+          "performance optimization",
+          "kernel template",
+          "Jinja2 template"
+        ],
+        "intentPatterns": [
+          "(debug|fix|investigate).*(inductor|compilation|codegen|kernel)",
+          "(optimize|improve).*(performance|kernel|fusion)",
+          "(add|implement).*(operator|lowering|fusion|template)",
+          "generated.*(code|kernel)",
+          "triton.*(kernel|codegen|template)",
+          "(create|write|add).*(template|TritonTemplate)"
+        ]
+      },
+      "fileTriggers": {
+        "paths": [
+          "**/torch/_inductor/**",
+          "**/test/inductor/**"
+        ],
+        "contentPatterns": [
+          "from torch._inductor",
+          "import.*torch\\._inductor",
+          "torch\\.compile.*backend.*inductor",
+          "@register_lowering",
+          "TritonTemplate",
+          "TritonTemplateKernel"
+        ]
+      }
+    },
+    "compile-trace": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "trace compilation",
+          "compilation pipeline",
+          "TORCH_LOGS",
+          "ir_post_fusion",
+          "aten IR",
+          "FX graph",
+          "loopbody",
+          "SIMD IR",
+          "post fusion",
+          "generated code",
+          "output_code",
+          "ops.store",
+          "ops.load",
+          "ops.index_expr",
+          "index chain",
+          "value chain",
+          "debugging compilation",
+          "verify fusion",
+          "understand compilation",
+          "trace inductor"
+        ],
+        "intentPatterns": [
+          "(trace|show|display|see).*(compilation|IR|pipeline|stages)",
+          "(debug|investigate|understand).*(compilation|codegen|fusion)",
+          "how.*(inductor|torch\\.compile).*(transform|compile|generate)",
+          "(show|see|view).*(generated|triton).*(code|kernel)",
+          "(trace|follow).*(python|function).*(through|to).*(triton|IR)",
+          "TORCH_LOGS.*ir_post_fusion"
+        ]
+      },
+      "fileTriggers": {
+        "paths": [
+          "**/ir_post_fusion_*.txt",
+          "**/output_code.py",
+          "**/fx_graph_*.py"
+        ]
+      }
+    }
+  }
+}
