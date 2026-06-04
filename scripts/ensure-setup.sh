@@ -21,6 +21,15 @@ echo "  Python: $(command -v python3 || echo 'not found')"
 echo "  Pip: $(command -v pip || echo 'not found')"
 echo "  UV: $(command -v uv || echo 'not found')"
 
+# Verify PyTorch is installed
+if ! python3 -c "import torch" 2>/dev/null; then
+    echo ""
+    echo "❌ PyTorch is not installed in the Python environment"
+    echo "   This plugin requires PyTorch to be installed."
+    echo "   Install with: pip install torch"
+    exit 1
+fi
+
 # 1. Check if acp-steering-mcp is installed
 if ! command -v acp-steering-mcp &> /dev/null; then
     echo "📦 Installing acp-steering-mcp..."
@@ -67,24 +76,20 @@ if [ ! -f "$INDICES/dynamo/steering.json" ]; then
 fi
 
 if [ "$NEEDS_INDEXING" = true ]; then
-    # Check if PyTorch source is available
-    # 1. Check if PYTORCH_SRC env var is set
-    # 2. Try to find PyTorch in common locations
-    if [ -z "$PYTORCH_SRC" ]; then
-        # Try common locations
-        for loc in \
-            "$HOME/pytorch" \
-            "$HOME/projects/pytorch" \
-            "/workspaces/pytorch-devcontainers/pytorch" \
-            "/workspace/pytorch" \
-            "/opt/pytorch" \
-            "$(pwd)/../pytorch" \
-            ; do
-            if [ -d "$loc/torch/_dynamo" ]; then
-                PYTORCH_SRC="$loc"
-                break
-            fi
-        done
+    # Resolve PyTorch source:
+    # 1. PYTORCH_PATH env var
+    # 2. Detect from Python environment
+    PYTORCH_SRC=""
+
+    if [[ -n "${PYTORCH_PATH:-}" && -d "${PYTORCH_PATH}" ]]; then
+        PYTORCH_SRC="$PYTORCH_PATH"
+    else
+        # Try to detect PyTorch from Python environment
+        TORCH_LOCATION=$(python3 -c "import torch; import os; print(os.path.dirname(torch.__file__))" 2>/dev/null || echo "")
+        if [[ -n "$TORCH_LOCATION" && -d "$TORCH_LOCATION/_dynamo" ]]; then
+            # Found development PyTorch source
+            PYTORCH_SRC="$(dirname "$TORCH_LOCATION")"
+        fi
     fi
 
     if [ -n "$PYTORCH_SRC" ] && [ -d "$PYTORCH_SRC/torch/_dynamo" ]; then
@@ -113,8 +118,8 @@ if [ "$NEEDS_INDEXING" = true ]; then
         fi
     else
         echo "⚠️  PyTorch source not found - API lookups will be limited"
-        echo "   To enable API documentation, set PYTORCH_SRC environment variable"
-        echo "   Example: export PYTORCH_SRC=/path/to/pytorch"
+        echo "   To enable API documentation, set PYTORCH_PATH:"
+        echo "     export PYTORCH_PATH=/path/to/pytorch"
     fi
 fi
 
