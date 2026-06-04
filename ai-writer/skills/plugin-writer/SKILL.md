@@ -38,24 +38,42 @@ mkdir -p my-plugin/{skills,agents,hooks,scripts}
 
 ## Plugin Structure
 
-A complete plugin follows this structure:
+**Single plugin (standalone):**
 
 ```
 my-plugin/
 ├── .claude-plugin/          # Plugin metadata (required)
-│   ├── plugin.json          # Plugin configuration
-│   └── marketplace.json     # Marketplace metadata (optional)
+│   └── plugin.json          # Plugin configuration
 ├── skills/                  # User-invocable skills
-│   └── skill-name/
-│       └── SKILL.md         # Skill definition
+│   └── */SKILL.md           # Skill definitions
 ├── agents/                  # Specialized AI agents
-│   └── agent-name.md        # Agent definition
+│   └── *.md                 # Agent definitions
 ├── hooks/                   # Lifecycle hooks (optional)
-│   └── hooks.json           # Hook configuration
+│   └── *.json               # Hook configuration
 ├── scripts/                 # Setup scripts (optional)
-│   └── ensure-setup.sh      # Auto-setup on SessionStart
+│   └── *.sh                 # Setup scripts
 ├── settings.json            # MCP server config (optional)
 └── pyproject.toml           # Package metadata (optional)
+```
+
+**Multi-plugin marketplace:**
+
+```
+marketplace-repo/
+├── .claude-plugin/
+│   └── marketplace.json     # Marketplace catalog ONLY
+├── plugin-one/              # First plugin subdirectory
+│   ├── .claude-plugin/
+│   │   └── plugin.json
+│   ├── skills/
+│   ├── agents/
+│   └── settings.json
+├── plugin-two/              # Second plugin subdirectory
+│   ├── .claude-plugin/
+│   │   └── plugin.json
+│   ├── skills/
+│   └── agents/
+└── pyproject.toml           # Optional repo-level metadata
 ```
 
 ## Instructions
@@ -260,25 +278,63 @@ Create `.claude-plugin/marketplace.json`:
 - `name`: Plugin name (must match plugin's plugin.json name)
 - `description`: Brief plugin description
 - `category`: Plugin category (e.g., `"development"`, `"productivity"`)
-- `source.source`: Always `"url"` for git repositories
-- `source.url`: Git repository URL
-- `source.ref`: Git branch/tag (e.g., `"main"`, `"v1.0.0"`)
+- `source`: Can be a **string** (relative path) or an **object** (git URL)
+
+**Source types:**
+
+1. **Relative path** (for plugins in same repository):
+   ```json
+   "source": "./plugin-name"
+   ```
+
+2. **Git URL** (for external plugins):
+   ```json
+   "source": {
+     "source": "url",
+     "url": "https://github.com/username/repo.git",
+     "ref": "main"
+   }
+   ```
+
+3. **Git subdirectory** (for plugin in subdirectory of external repo):
+   ```json
+   "source": {
+     "source": "git-subdir",
+     "url": "https://github.com/username/repo.git",
+     "path": "plugins/plugin-name",
+     "ref": "main"
+   }
+   ```
 
 #### Step 2: Add plugin to marketplace
 
 To add a new plugin to an existing marketplace.json:
 
+**Local plugin (in same repository):**
 ```json
 {
   "plugins": [
-    // ... existing plugins ...
     {
       "name": "new-plugin-name",
       "description": "What this plugin does",
       "category": "development",
+      "source": "./new-plugin-name"
+    }
+  ]
+}
+```
+
+**External plugin (separate repository):**
+```json
+{
+  "plugins": [
+    {
+      "name": "external-plugin",
+      "description": "What this plugin does",
+      "category": "development",
       "source": {
         "source": "url",
-        "url": "https://github.com/username/new-plugin.git",
+        "url": "https://github.com/username/plugin-repo.git",
         "ref": "main"
       }
     }
@@ -370,35 +426,55 @@ mkdir -p data-tools/{skills,agents,hooks,scripts}
 }
 ```
 
-### Example 3: Add plugin to marketplace
+### Example 3: Multi-plugin marketplace
 
-**User request:** "Add the torchtalk plugin to my marketplace"
+**User request:** "Create a marketplace with two local plugins and one external plugin"
 
-Edit `.claude-plugin/marketplace.json`:
+1. Create marketplace structure:
+```bash
+mkdir -p marketplace/.claude-plugin
+mkdir -p marketplace/plugin-one/{.claude-plugin,skills,agents}
+mkdir -p marketplace/plugin-two/{.claude-plugin,skills,agents}
+```
 
+2. Create `marketplace/.claude-plugin/marketplace.json`:
 ```json
 {
-  "name": "ai-marketplace",
-  "displayName": "PyTorch AI Marketplace",
-  "description": "Curated AI tools for PyTorch development",
+  "name": "my-marketplace",
+  "displayName": "My Plugin Marketplace",
+  "description": "Collection of development tools",
   "owner": {
     "name": "Your Name",
     "email": "you@example.com"
   },
   "plugins": [
     {
-      "name": "torchtalk",
-      "description": "MCP server for PyTorch codebase analysis",
+      "name": "plugin-one",
+      "description": "First local plugin",
+      "category": "development",
+      "source": "./plugin-one"
+    },
+    {
+      "name": "plugin-two",
+      "description": "Second local plugin",
+      "category": "development",
+      "source": "./plugin-two"
+    },
+    {
+      "name": "external-plugin",
+      "description": "External plugin from another repo",
       "category": "development",
       "source": {
         "source": "url",
-        "url": "https://github.com/TorchedHat/torchtalk.git",
+        "url": "https://github.com/username/external-plugin.git",
         "ref": "main"
       }
     }
   ]
 }
 ```
+
+3. Create `marketplace/plugin-one/.claude-plugin/plugin.json` and `marketplace/plugin-two/.claude-plugin/plugin.json` with their respective configurations.
 
 ## Best practices
 
@@ -422,12 +498,19 @@ Edit `.claude-plugin/marketplace.json`:
    - Document required environment variables
    - Test MCP server connectivity
 
-5. **Marketplace entries:**
+5. **Marketplace structure:**
+   - **Use relative paths for local plugins** (faster, no duplicate clones)
+   - **Use git URLs only for external plugins**
+   - Marketplace directory should contain ONLY marketplace.json (no plugin.json)
+   - Each plugin subdirectory is self-contained with its own plugin.json
+
+6. **Marketplace entries:**
    - Use specific descriptions
    - Categorize appropriately
-   - Pin to stable refs (not `main` for production)
+   - Pin external plugins to stable refs (not `main` for production)
+   - Local plugins use simple string paths: `"source": "./plugin-name"`
 
-6. **Version management:**
+7. **Version management:**
    - Start at `1.0.0`
    - Follow semantic versioning
    - Update version in plugin.json when making changes
@@ -468,7 +551,18 @@ Before finalizing a plugin:
 **Plugin not in marketplace:**
 - Verify marketplace.json syntax
 - Check plugin name matches plugin.json name
-- Ensure source URL is accessible
+- For local plugins, verify relative path is correct (e.g., `"./plugin-name"`)
+- For external plugins, ensure source URL is accessible
+
+**Marketplace clones entire repo multiple times:**
+- You're probably using git URLs for local plugins
+- Change to relative paths: `"source": "./plugin-name"` instead of git URL
+- Relative paths are resolved from marketplace root, not from `.claude-plugin/`
+
+**Plugin.json and marketplace.json in same directory:**
+- This is unusual - a marketplace should NOT have its own plugin.json
+- Marketplace catalogs plugins, it's not itself a plugin
+- Move plugin files to a subdirectory and use relative path in marketplace.json
 
 ## Output format
 
