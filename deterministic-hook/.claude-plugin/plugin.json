@@ -1,0 +1,21 @@
+{
+  "name": "deterministic-hook",
+  "displayName": "Deterministic Hook System",
+  "version": "1.0.0",
+  "description": "Deterministic hook system for automatic skill activation and guardrails in Claude Code. Includes skill-developer documentation and hook infrastructure for UserPromptSubmit triggers.",
+  "skills": "./skills/",
+  "agents": [],
+  "author": {
+    "name": "morrison-turnansky"
+  },
+  "homepage": "https://github.com/morrison-turnansky/ai-marketplace",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "hooks",
+    "skill-activation",
+    "guardrails",
+    "deterministic",
+    "automation",
+    "claude-code"
+  ]
+}

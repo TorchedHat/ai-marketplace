@@ -42,6 +42,7 @@ claude plugin marketplace add TorchedHat/ai-marketplace
 
 # Install the plugin(s)
 claude plugin install ai-writer
+claude plugin install deterministic-hook
 claude plugin install torch-compile
 claude plugin install torchtalk
 ```
