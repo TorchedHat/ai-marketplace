@@ -1,5 +1,5 @@
 {
-  "name": "ai-marketplace",
+  "name": "torch-compile",
   "displayName": "PyTorch AI Marketplace",
   "version": "1.0.0",
   "description": "Curated collection of AI tools, skills, and agents for PyTorch development. Includes torch.compile debugging, semantic API search, and development workflows.",

@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "ai-marketplace",
+      "name": "torch-compile",
       "description": "PyTorch AI development tools and workflow automation including torch.compile debugging skills",
       "category": "development",
       "source": {
