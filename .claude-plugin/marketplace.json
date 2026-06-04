@@ -9,13 +9,15 @@
   "plugins": [
     {
       "name": "torch-compile",
-      "description": "PyTorch AI development tools and workflow automation including torch.compile debugging skills",
+      "description": "PyTorch torch.compile debugging tools and workflow automation",
       "category": "development",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/morrison-turnansky/ai-marketplace.git",
-        "ref": "main"
-      }
+      "source": "./torch-compile"
+    },
+    {
+      "name": "ai-writer",
+      "description": "Tools for creating and managing Claude Code plugins, skills, and agents",
+      "category": "development",
+      "source": "./ai-writer"
     },
     {
       "name": "torchtalk",

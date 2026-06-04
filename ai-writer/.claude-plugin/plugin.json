@@ -1,0 +1,21 @@
+{
+  "name": "ai-writer",
+  "displayName": "AI Writer",
+  "version": "1.0.0",
+  "description": "Tools for creating and managing Claude Code plugins, skills, and agents. Includes plugin-writer, skill-writer, and agent-writer utilities.",
+  "skills": "./skills/",
+  "agents": [],
+  "author": {
+    "name": "morrison-turnansky"
+  },
+  "homepage": "https://github.com/morrison-turnansky/ai-marketplace",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "plugin",
+    "skill",
+    "agent",
+    "authoring",
+    "development",
+    "claude-code"
+  ]
+}
