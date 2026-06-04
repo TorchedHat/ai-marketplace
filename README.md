@@ -27,7 +27,7 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 - Semantic API search over PyTorch compiler modules
 - Implementation guidance for compiler development
 
-👉 **[Full documentation](TORCH_COMPILE_TOOLS.md)**
+👉 **[Full documentation](torch-compile/TORCH_COMPILE_TOOLS.md)**
 
 ### Installation
 
@@ -36,6 +36,7 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 claude plugin marketplace add TorchedHat/ai-marketplace
 
 # Install the plugin(s)
+claude plugin install ai-writer
 claude plugin install torch-compile
 claude plugin install torchtalk
 ```
@@ -113,25 +114,14 @@ This repository serves as a **reference implementation** for Claude Code plugin 
 
 ## Documentation
 
-- **[TORCH_COMPILE_TOOLS.md](TORCH_COMPILE_TOOLS.md)** - torch.compile debugging tools documentation
+- **[TORCH_COMPILE_TOOLS.md](torch-compile/TORCH_COMPILE_TOOLS.md)** - torch.compile debugging tools documentation
 - **[REPO_ARCH.md](REPO_ARCH.md)** - Architecture and development guide
 - **[CLAUDE.md](CLAUDE.md)** - Code guidelines and testing
 
 ## Contributing
 
-We welcome contributions of new tools, skills, and agents for the PyTorch ecosystem!
-
-**Adding new tool collections:**
-1. Create a new directory for your tool collection
-2. Add skills in `skills/` with descriptive SKILL.md files
-3. Add specialized agents in `agents/` if needed
-4. Update marketplace.json with your tool metadata
-5. Submit a PR with documentation
-
-**Improving existing tools:**
-- See individual tool documentation (e.g., TORCH_COMPILE_TOOLS.md)
-- Check REPO_ARCH.md for contribution guidelines
-- Follow code guidelines in CLAUDE.md
+We welcome contributions of new tools, skills, and agents!
+See - **Contributing**: See [REPO_ARCH.md](REPO_ARCH.md) for guidelines
 
 ## Troubleshooting
 
