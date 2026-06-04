@@ -11,7 +11,7 @@
     "./agents/compile-debug.md"
   ],
   "author": {
-    "name": "morrison-turnansky"
+    "name": "TorchedHat"
   },
   "homepage": "https://github.com/pytorch/pytorch",
   "license": "BSD-3-Clause",

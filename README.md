@@ -1,6 +1,6 @@
 # AI Marketplace
 
-[![GitHub](https://img.shields.io/badge/GitHub-ai--marketplace-blue?logo=github)](https://github.com/morrison-turnansky/ai-marketplace)
+[![GitHub](https://img.shields.io/badge/GitHub-ai--marketplace-blue?logo=github)](https://github.com/TorchedHat/ai-marketplace)
 
 A curated collection of Claude Code plugins, skills, and agents for PyTorch development. This marketplace provides AI-powered tools for debugging, development, and optimization across the PyTorch ecosystem.
 
@@ -18,7 +18,7 @@ This marketplace serves the broader PyTorch community by packaging AI tools that
 ## Contributing
 
 We welcome contributions of new tools, skills, and agents!
-See - **Contributing**: See [REPO_ARCH.md](REPO_ARCH.md) for guidelines
+See [CONTRIBUTION_GUIDELINES.md](CONTRIBUTION_GUIDELINES.md) for guidelines
 
 ## Available Tool Collections
 
@@ -130,7 +130,7 @@ Part of the PyTorch devcontainer tooling. See [LICENSE](LICENSE) for details.
 
 ## Links
 
-- **Repository**: [github.com/morrison-turnansky/ai-marketplace](https://github.com/morrison-turnansky/ai-marketplace)
-- **Issues**: [GitHub Issues](https://github.com/morrison-turnansky/ai-marketplace/issues)
+- **Repository**: [github.com/TorchedHat/ai-marketplace](https://github.com/TorchedHat/ai-marketplace)
+- **Issues**: [GitHub Issues](https://github.com/TorchedHat/ai-marketplace/issues)
 - **Documentation**: See individual tool documentation in this repository
-- **Contributing**: See [REPO_ARCH.md](REPO_ARCH.md) for guidelines
+- **Contributing**: See [CONTRIBUTION_GUIDELINES.md](CONTRIBUTION_GUIDELINES.md) for guidelines

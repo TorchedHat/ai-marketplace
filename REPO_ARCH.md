@@ -117,64 +117,15 @@ No hardcoded paths. Relative paths for local plugins. PyTorch source location au
 ### 5. Self-Contained
 All dependencies installed automatically via SessionStart hooks. No manual setup required.
 
-## Development Workflow
-
-### Adding a New Skill
-
-**Using plugin authoring tools:**
-```bash
-/ai-writer:skill-writer    # Create a new Claude Code skill
-/ai-writer:agent-writer    # Create a specialized agent definition
-/ai-writer:plugin-writer   # Create a new plugin
-```
-
-**Manual creation:**
-
-1. Choose target plugin (e.g., `torch-compile/` or `ai-writer/`)
-
-2. Create directory in `<plugin>/skills/`:
-```bash
-mkdir torch-compile/skills/my-new-skill
-```
-
-3. Add `SKILL.md` with frontmatter:
-```markdown
----
-name: my-new-skill
-description: Brief description
----
-
-# Skill Content
-...
-```
-
-### Adding a New Plugin
-
-1. Create plugin directory structure:
-```bash
-mkdir -p new-plugin/{.claude-plugin,skills,agents,hooks,scripts}
-```
-
-2. Create `new-plugin/.claude-plugin/plugin.json`
-
-3. Add to `.claude-plugin/marketplace.json`:
-```json
-{
-  "name": "new-plugin",
-  "description": "Plugin description",
-  "category": "development",
-  "source": "./new-plugin"
-}
-```
-
-### Updating Documentation
+## Documentation
 
 Documentation files:
 - `README.md` - User-facing documentation, installation, and troubleshooting
-- `REPO_ARCH.md` - This file (architecture, design principles, and development)
+- `REPO_ARCH.md` - This file (architecture and design principles)
 - `CLAUDE.md` - Code guidelines and testing practices
+- `CONTRIBUTION_GUIDELINES.md` - Development workflow and contribution guidelines
 
-Update these files when making structural changes or adding new plugins/skills/agents.
+For contributing new plugins, skills, or agents, see [CONTRIBUTION_GUIDELINES.md](CONTRIBUTION_GUIDELINES.md).
 
 ## References
 
