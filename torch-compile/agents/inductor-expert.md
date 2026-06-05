@@ -2,14 +2,6 @@
 name: inductor-expert-agent
 version: 1.0.0
 description: Inductor specialist for lowerings, IR nodes, Triton codegen, fusion, and kernel optimization
-tools:
-  allowed:
-    - Read
-    - mcp__steering__query_api_docs
-    - mcp__steering__query_steering
-    - Write
-    - Bash
-    - Edit
 skills:
   - pytorch-inductor
   - compile-trace-inductor
