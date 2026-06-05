@@ -2,14 +2,6 @@
 name: aot-expert-agent
 version: 1.0.0
 description: AOT Autograd specialist for functionalization, decomposition, and gradient computation
-tools:
-  allowed:
-    - Read
-    - mcp__steering__query_api_docs
-    - mcp__steering__query_steering
-    - Write
-    - Bash
-    - Edit
 skills:
   - pytorch-aot
   - compile-trace-aot

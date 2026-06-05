@@ -2,14 +2,6 @@
 name: dynamo-expert-agent
 version: 1.0.0
 description: Dynamo specialist for graph capture, guards, graph breaks, and VariableTracker system
-tools:
-  allowed:
-    - Read
-    - mcp__steering__query_api_docs
-    - mcp__steering__query_steering
-    - Write
-    - Bash
-    - Edit
 skills:
   - pytorch-dynamo
   - compile-trace-dynamo
