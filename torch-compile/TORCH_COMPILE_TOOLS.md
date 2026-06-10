@@ -59,11 +59,33 @@ Skills load automatically based on context:
 
 ### Example Queries
 
-**torch.compile debugging:**
+**Using the compile debug agent:**
+
+The agent is designed to identify the source of an issue not fix an issue.
+It will write a report that can serve as a plan for a new agent to ingest.  
+
+#### Do's
+
+The agent is writen to handle queries like the following:
 ```
 Use the torch compile debugging agent to debeug repro.py and file
 a report at /path.
 ```
+
+#### Dont's
+
+The agent is not meant to fix issues.
+```
+Fix the issue at repro.py.
+```
+
+Why?
+
+Context managment is critical for success of the agent. The agent uses a lot of 
+deterministic software tools to minimize exploration of the code base 
+and therefore keeping context small. Fixing issues requires significant
+exploration of the code base and will easily fill context since PyTorch is a
+huge repo. This leads to poor outcomes in general.
 
 **PyTorch API lookup (via steering MCP):**
 ```
