@@ -1,0 +1,22 @@
+{
+  "name": "vllm-test-audit",
+  "displayName": "vLLM Test Audit",
+  "version": "1.0.0",
+  "description": "Audit vLLM tests for coincidentally-correct batch invariance assumptions. Includes exploration (find suspicious tests) and review (classify via formal decision tree) skills.",
+  "skills": "./skills/",
+  "agents": [],
+  "author": {
+    "name": "PyTorch Compiler Team"
+  },
+  "homepage": "https://github.com/vllm-project/vllm",
+  "license": "Apache-2.0",
+  "keywords": [
+    "vllm",
+    "pytorch",
+    "testing",
+    "batch-invariance",
+    "determinism",
+    "audit",
+    "coincidentally-correct"
+  ]
+}

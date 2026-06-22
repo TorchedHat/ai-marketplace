@@ -4,11 +4,20 @@ We welcome contributions of new tools, skills, agents, and plugins to the PyTorc
 
 ## Development Workflow
 
+### Local Developement
+
+To test a feature locally, clone the repository, checkout your branch and then
+run 
+```bash
+claude plugin marketplace add ./ai-marketplace
+claude plugin install your-plugin 
+```
+
 ### Adding a New AI Tool
 
 **Using plugin authoring tools (recommended):**
 ```bash
-/ai-writer:skill-writer    # Create a new Claude Code skill
+/ai-writer:skill-writer    # Create a new Claude Code skill/
 /ai-writer:agent-writer    # Create a specialized agent definition
 /ai-writer:plugin-writer   # Create a new plugin
 ```

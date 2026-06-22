@@ -4,7 +4,7 @@
   "description": "Curated collection of AI tools, skills, and agents for PyTorch development workflows across the ecosystem",
   "owner": {
     "name": "Morrison Turnansky",
-    "email": "morrison.turnansky@example.com"
+    "email": "mturnans@redhat.com"
   },
   "plugins": [
     {
@@ -24,6 +24,18 @@
       "description": "Deterministic hook system for automatic skill activation and guardrails with skill-developer documentation",
       "category": "development",
       "source": "./deterministic-hook"
+    },
+    {
+      "name": "vllm-compile",
+      "description": "Expert guidance for vLLM's custom compiler - @support_torch_compile decorator, vllmBackend/Inductor passes, PiecewiseBackend graph splitting, and CudaGraphWrapper CUDA graph management",
+      "category": "development",
+      "source": "./vllm-compile"
+    },
+    {
+      "name": "vllm-test-audit",
+      "description": "Audit vLLM tests for coincidentally-correct batch invariance assumptions. Explore to find suspicious tests, review to classify via formal decision tree.",
+      "category": "testing",
+      "source": "./vllm-test-audit"
     },
     {
       "name": "torchtalk",
