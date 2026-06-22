@@ -2,6 +2,8 @@
 
 One-page reference for vLLM's custom compilation system.
 
+**For detailed explanations, see [SKILL.md](SKILL.md).**
+
 ## 4-Stage Pipeline
 
 ```

@@ -2,6 +2,10 @@
 
 End-to-end walkthrough of the 8-stage compilation pipeline from source code to CUDA graph execution.
 
+**For architecture overview, see [ARCHITECTURE.md](ARCHITECTURE.md).**
+**For quick commands, see [QUICK-REFERENCE.md](QUICK-REFERENCE.md).**
+**For the main skill content, see [SKILL.md](SKILL.md).**
+
 ## Pipeline Overview
 
 ```

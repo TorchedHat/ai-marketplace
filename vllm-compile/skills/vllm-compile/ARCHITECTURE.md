@@ -2,6 +2,10 @@
 
 Complete overview of vLLM's custom compilation system built on PyTorch Dynamo + Inductor.
 
+**For pipeline walkthrough, see [COMPILATION-PIPELINE.md](COMPILATION-PIPELINE.md).**
+**For quick commands, see [QUICK-REFERENCE.md](QUICK-REFERENCE.md).**
+**For the main skill content, see [SKILL.md](SKILL.md).**
+
 ## System Overview
 
 ```

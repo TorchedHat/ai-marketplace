@@ -1,6 +1,6 @@
 ---
 name: vllm-compile
-description: Expert guidance for vLLM's custom compiler - focusing on @support_torch_compile decorator, vllmBackend/Inductor Passes, PiecewiseBackend, and CudaGraphWrapper.
+description: Expert guidance for vLLM's custom compiler - focusing on @support_torch_compile decorator, vllmBackend/Inductor Passes, PiecewiseBackend, and CudaGraphWrapper. Use when debugging torch.compile issues within vllm, implementing fusion passes, configuring graph splitting, investigating guard dropping, or working with CUDA graph capture in vLLM.
 ---
 
 # vLLM torch.compile Expert
@@ -12,23 +12,24 @@ Expert guidance for understanding and working with vLLM's custom compilation sys
 3. **PiecewiseBackend** - Graph splitting and piecewise compilation
 4. **CudaGraphWrapper** - CUDA graph capture and replay
 
-## Purpose
+## Quick start
 
-This skill provides deep knowledge of vLLM's compilation internals:
-- How `@support_torch_compile` marks and configures compilable methods
-- How vllmBackend applies LLM-specific fusion passes
-- How PiecewiseBackend splits graphs at attention boundaries
-- How CudaGraphWrapper captures and replays CUDA graphs
+If you're new to vLLM compilation, start with [QUICK-REFERENCE.md](QUICK-REFERENCE.md) for common commands and debugging.
 
-## When to Use This Skill
+For a full pipeline walkthrough, see [COMPILATION-PIPELINE.md](COMPILATION-PIPELINE.md).
 
-Activate when:
+For architecture details, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## When to use this skill
+
+Use when:
 - Implementing or modifying `@support_torch_compile` decorated methods
 - Adding new fusion passes to vllmBackend
 - Debugging graph splitting in PiecewiseBackend
 - Configuring CUDA graph capture
 - Understanding compilation performance bottlenecks
 - Investigating guard dropping behavior
+- Working with torch.compile in vLLM models
 
 ## Pipeline Overview
 
@@ -657,13 +658,26 @@ TORCH_LOGS="+inductor,+dynamo"  # PyTorch compilation logs
 TORCH_TRACE=/tmp/trace          # Save compilation traces
 ```
 
-## Related Skills
+## Best practices
 
-- **[pytorch-dynamo](../pytorch-dynamo/SKILL.md)** - Understanding Dynamo graph capture and symbolic execution
-- **[pytorch-inductor](../pytorch-inductor/SKILL.md)** - Understanding Inductor lowering and code generation
+- Start with debug logging (`VLLM_LOGGING_LEVEL=DEBUG`) when investigating issues
+- Use cache invalidation (`VLLM_DISABLE_COMPILE_CACHE=1`) to force recompilation when testing
+- Test without CUDA graphs first (`-cc.cudagraph_mode=NONE`) to isolate compilation issues
+- Check the cache directory (`~/.cache/vllm/torch_compile_cache/`) for generated kernel code
+- Avoid graph breaks (print statements, dynamic control flow) in decorated methods
+- Use specific compile sizes (`-cc.compile_sizes`) during development to reduce iteration time
+- To view compiled artifacts use VLLM_DEBUG_DUMP_PATH=/tmp/baseline/ python /path_to_folder/your_python_file.py
 
-## Official Documentation
+## Requirements
 
+- vLLM installed from source
+
+
+## Related documentation
+
+- Quick reference: [QUICK-REFERENCE.md](QUICK-REFERENCE.md)
+- Pipeline walkthrough: [COMPILATION-PIPELINE.md](COMPILATION-PIPELINE.md)
+- Architecture overview: [ARCHITECTURE.md](ARCHITECTURE.md)
 - [vLLM torch.compile docs](https://docs.vllm.ai/en/latest/design/torch_compile/)
 - [Debug guide](https://docs.vllm.ai/en/latest/design/debug_vllm_compile/)
 - [PyTorch compile docs](https://pytorch.org/docs/stable/torch.compiler.html)
