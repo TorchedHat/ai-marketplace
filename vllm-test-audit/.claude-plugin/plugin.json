@@ -6,10 +6,9 @@
   "skills": "./skills/",
   "agents": [],
   "author": {
-    "name": "PyTorch Compiler Team"
+    "name": "compile"
   },
-  "homepage": "https://github.com/vllm-project/vllm",
-  "license": "Apache-2.0",
+  "homepage": "https://github.com/TorchedHat/ai-marketplace",
   "keywords": [
     "vllm",
     "pytorch",

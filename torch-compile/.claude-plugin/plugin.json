@@ -11,10 +11,9 @@
     "./agents/compile-debug.md"
   ],
   "author": {
-    "name": "TorchedHat"
+    "name": "Morrison Turnansky"
   },
-  "homepage": "https://github.com/pytorch/pytorch",
-  "license": "BSD-3-Clause",
+  "homepage": "https://github.com/TorchedHat/ai-marketplace",
   "keywords": [
     "pytorch",
     "torch.compile",

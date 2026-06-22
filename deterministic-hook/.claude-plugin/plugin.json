@@ -6,10 +6,9 @@
   "skills": "./skills/",
   "agents": [],
   "author": {
-    "name": "TorchedHat"
+    "name": "Morrison Turnansky"
   },
   "homepage": "https://github.com/TorchedHat/ai-marketplace",
-  "license": "BSD-3-Clause",
   "keywords": [
     "hooks",
     "skill-activation",

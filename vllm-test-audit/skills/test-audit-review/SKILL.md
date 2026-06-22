@@ -119,10 +119,3 @@ After reviewing all candidates, produce a summary:
 | STRONG_CONTRACT | N | Remove from list — exact match is correct by design |
 | HAS_UPDATE_PATH | N | Remove from list — maintainer can refresh on bump |
 | NOT_REALISTIC | N | Remove from list — drift won't change outcome |
-
-## Reference
-
-- Full audit results: `specs/vllm-torch-testing/plan.md`
-- Batch invariance docs: https://docs.vllm.ai/en/latest/features/batch_invariance/
-- Original audit gist: https://gist.github.com/zou3519/ded34ec406db9ba71cf622652664f103
-- Review workflow source: `NUMERIC_AUDIT_GUIDANCE.md` in the gist
