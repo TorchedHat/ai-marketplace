@@ -1,0 +1,22 @@
+{
+  "name": "vllm-compile",
+  "displayName": "vLLM Compilation Expert",
+  "version": "1.0.0",
+  "description": "Expert guidance for vLLM's custom compiler - focusing on @support_torch_compile decorator, vllmBackend/Inductor Passes, PiecewiseBackend, and CudaGraphWrapper. Use when working with vLLM compilation internals, torch.compile integration, or debugging compilation issues.",
+  "skills": "./skills/",
+  "agents": [],
+  "author": {
+    "name": "Morrison Turnansky"
+  },
+  "homepage": "https://github.com/TorchedHat/ai-marketplace",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "vllm",
+    "torch.compile",
+    "compilation",
+    "inductor",
+    "dynamo",
+    "cuda-graphs",
+    "llm-inference"
+  ]
+}
