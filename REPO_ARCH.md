@@ -22,6 +22,13 @@ ai-marketplace/
 │   ├── scripts/             # Setup and maintenance scripts
 │   │   └── *.sh             # Setup scripts
 │   └── settings.json        # MCP server configurations
+├── pytorch-test-refactor/   # PyTorch test refactoring tools
+│   ├── .claude-plugin/
+│   │   └── plugin.json
+│   ├── skills/
+│   │   └── test-refactor/   # test-refactor skill with supporting docs
+│   └── agents/
+│       └── test-refactor-agent.md
 ├── ai-writer/               # Plugin authoring tools
 │   ├── .claude-plugin/
 │   │   └── plugin.json
@@ -99,6 +106,11 @@ callable_agents:
 **ai-writer:**
 - 3 skills: plugin-writer, skill-writer, agent-writer
 - Tools for creating and managing Claude Code plugins, skills, and agents
+
+**pytorch-test-refactor:**
+- 1 skill: test-refactor (with supporting files: CLASSIFICATION-GUIDE.md, PATTERNS.md, REFERENCES.md)
+- 1 agent: test-refactor-agent (delegates to compile agents for domain-specific tests)
+- Guides device-agnostic test refactoring with hw_classification for the PyTorch test suite
 
 ## Design Principles
 

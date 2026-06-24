@@ -38,6 +38,12 @@
       "source": "./vllm-test-audit"
     },
     {
+      "name": "pytorch-test-refactor",
+      "description": "Refactor PyTorch test files to be device-agnostic with hardware classification (GENERIC/DEVICE_GENERIC/DEVICE_SPECIFIC/MULTI_DEVICE). Guides analysis, classification, class splitting, and verification.",
+      "category": "testing",
+      "source": "./pytorch-test-refactor"
+    },
+    {
       "name": "torchtalk",
       "description": "MCP server for conversational PyTorch codebase analysis: trace Python->C++->CUDA binding chains, impact analysis, dispatch mapping, call-graph visualization, and test discovery across the PyTorch source.",
       "category": "development",

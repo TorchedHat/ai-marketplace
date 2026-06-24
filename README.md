@@ -34,6 +34,16 @@ Multi-agent system for PyTorch compiler development with 10 skills and 4 special
 
 👉 **[Full documentation](torch-compile/TORCH_COMPILE_TOOLS.md)**
 
+### PyTorch Test Refactoring Tools
+
+Skill and agent for refactoring PyTorch test files to be device-agnostic, following the community test refactoring initiative ([pytorch/pytorch#185590](https://github.com/pytorch/pytorch/issues/185590)).
+
+**Features:**
+- 4-phase workflow: Analyze, Classify, Refactor, Verify
+- Decision tree for 5 hardware classifications (GENERIC, DEVICE_GENERIC, DEVICE_SPECIFIC, MULTI_DEVICE_GENERIC, MULTI_DEVICE_SPECIFIC)
+- Before/after code patterns from real merged PRs
+- Specialist agent with delegation to compile agents for domain-specific test files
+
 ### Installation
 
 ```bash
@@ -45,6 +55,7 @@ claude plugin install ai-writer
 claude plugin install deterministic-hook
 claude plugin install torch-compile
 claude plugin install torchtalk
+claude plugin install pytorch-test-refactor
 ```
 
 ## Using Marketplace Tools
