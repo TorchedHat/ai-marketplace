@@ -33,9 +33,15 @@
     },
     {
       "name": "vllm-test-audit",
-      "description": "Audit vLLM tests for coincidentally-correct batch invariance assumptions. Explore to find suspicious tests, review to classify via formal decision tree.",
+      "description": "Two-phase test oracle auditor for vLLM. Phase 1 (audit-pr) scopes to PR/directory, runs candidate finder, produces structured evidence. Phase 2 (test-audit-review) independently classifies via decision tree.",
       "category": "testing",
       "source": "./vllm-test-audit"
+    },
+    {
+      "name": "ci-runner-demo",
+      "description": "Demo plugin for validating Claude Code plugin infrastructure in CI. Tests hook execution, script invocation, and skill loading.",
+      "category": "testing",
+      "source": "./ci-runner-demo"
     },
     {
       "name": "pytorch-test-refactor",

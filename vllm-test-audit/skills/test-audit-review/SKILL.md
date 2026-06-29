@@ -1,15 +1,21 @@
 ---
 name: test-audit-review
-description: Apply the formal review workflow to classify vLLM test candidates as COINCIDENTALLY_CORRECT, STRONG_CONTRACT, or HAS_UPDATE_PATH. Use after test-audit-explore has produced a raw candidate list, or when triaging a specific test for batch invariance assumptions. Walks through a decision tree checking for strong contracts, update paths, and realistic numeric drift.
+description: >-
+  Phase 2 of the two-phase test oracle auditor. Classify vLLM test candidates as
+  COINCIDENTALLY_CORRECT, STRONG_CONTRACT, or HAS_UPDATE_PATH. Takes structured
+  evidence from audit-pr (Phase 1) and applies the decision tree independently.
+  Must run in a separate Claude invocation from Phase 1 to prevent bias propagation.
 ---
 
-# Test Audit: Review
+# Test Audit: Review (Phase 2)
 
-Classify candidate tests through a formal decision tree. Takes raw findings from `test-audit-explore` and produces a reviewed, classified list.
+Classify candidate tests through a formal decision tree. Takes structured evidence from `audit-pr` (Phase 1) or raw findings from `test-audit-explore` and produces a reviewed, classified list.
+
+**You are Phase 2 of a two-phase pipeline. You receive structured evidence (facts about test assertions) and independently classify each candidate. You have no knowledge of Phase 1's reasoning — only its structured output. Your job is adversarial: find reasons to REMOVE candidates from the suspicious list (strong contract? update path? unrealistic drift?).**
 
 ## When to use
 
-- After `test-audit-explore` has produced a raw candidate list
+- After `audit-pr` has produced structured evidence (PR-scoped, pre-filtered)
 - When triaging a specific test that broke on a PyTorch upgrade
 - When deciding whether a test needs fixing or is actually correct
 - When reviewing a PR that adds a new cross-config comparison test
