@@ -1,29 +1,26 @@
 ---
-name: audit-pr
+name: audit-contract
 description: >-
-  Audit vLLM tests for fragile assertions and coincidentally-correct oracles.
-  Scopes to a PR, directory, or single test, finds test files, and produces
-  structured evidence. Use when auditing tests, checking a PR for brittle
-  numeric assumptions, or analyzing test oracle correctness. Feed output to
-  test-audit-review (Phase 2) in a separate invocation.
+  Reference-only skill defining the numeric stability audit contract. Contains
+  the 4 inclusion criteria, strong contracts, not-strong-by-default clauses,
+  excluded-by-default rules, assertion pattern guidance, and output formats
+  for both phases. Loaded by audit-agent and review-agent as shared knowledge.
 ---
 
-# Audit PR — Phase 1: Evidence Generation
+# Numeric Stability Audit Contract
 
-Find and analyze vLLM test assertions that may be coincidentally correct. Produces structured evidence with initial classifications for Phase 2 adversarial verification.
+Single source of truth for the vLLM test oracle auditor. Both Phase 1 (audit-agent) and Phase 2 (review-agent) load this skill for criteria definitions, clause numbering, and output formats.
 
-**You produce structured evidence with initial classifications. Phase 2 adversarially verifies your claims — it will challenge reasoning and reclassify where warranted.**
-
-## Numeric Stability Audit Guidance
+## Inclusion Criteria
 
 A test is "coincidentally correct" only when **all four** are true:
 
 1. **Weak oracle** — depends on exact generated text/token/logprob equality, match-ratio equality, or another weak generated-output oracle.
 2. **Realistic breakage** — a PyTorch numeric/scheduling/compiler change has a realistic chance of changing the asserted value.
-3. **No update path** — no obvious fix during a PyTorch version bump (e.g., refreshing a golden output or adjusting an intentional tolerance).
+3. **No update path** — no obvious fix during a PyTorch version bump (e.g., refreshing a golden output or adjusting a tolerance).
 4. **No strong contract** — no vLLM/PyTorch/product contract requires the two compared executions to be bitwise/text identical.
 
-### Excluded by Default
+## Excluded by Default
 
 These are NOT coincidentally correct:
 
@@ -32,7 +29,7 @@ These are NOT coincidentally correct:
 3. **Difference-only tests** (`assert a != b`) — numeric drift unlikely to flip inequality into equality (criterion 2 fails).
 4. **Smoke/liveness tests** (`assert len(output) > 0`) — FP changes don't produce empty output (criterion 2 fails).
 
-### Strong Contracts
+## Strong Contracts
 
 Treat these as strong enough to classify as STRONG_CONTRACT unless the test adds another weak oracle on top:
 
@@ -46,7 +43,7 @@ Treat these as strong enough to classify as STRONG_CONTRACT unless the test adds
 8. Spec decode exact matching only when the test explicitly forces batch-invariant mode/kernels.
 9. Tests under `tests/v1/determinism/` get `VLLM_BATCH_INVARIANT=1` from the autouse `conftest.py` fixture — account for that before classifying as ordinary batch-invariance assumptions.
 
-### Not Strong By Default
+## Not Strong By Default
 
 These remain suspicious unless the test explicitly establishes a stronger contract:
 
@@ -61,40 +58,7 @@ These remain suspicious unless the test explicitly establishes a stronger contra
 9. Prompt text vs prompt_embeds equality when the only oracle is final generated text.
 10. Single request vs first item in a larger multimodal batch, unless the test forces batch-invariant execution.
 
-## Modes
-
-### PR Mode (`audit-pr 1234`)
-
-1. Get changed files:
-   ```bash
-   gh pr view <number> --repo vllm-project/vllm --json files --jq '.files[].path'
-   ```
-2. Filter to test files using the test file filter
-3. If no test files changed, report "No test files in this PR" and stop
-
-### Directory Mode (`audit-pr tests/compile/correctness_e2e/`)
-
-Run the test file filter on the given directory.
-
-### File Mode (`audit-pr tests/v1/e2e/general/test_cascade_attention.py`)
-
-Analyze the single file directly.
-
-### File + Test Mode (`audit-pr tests/.../test_cascade_attention.py::test_cascade_attention`)
-
-Read the named test function directly and produce evidence for it. Pytest-style `file::function` syntax.
-
-## Step 1: Find Test Files
-
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/test_file_filter.sh" <files-or-directories>
-```
-
-Outputs one `test_*.py` path per line. If no files found, stop.
-
-## Step 2: Analyze Test Files
-
-Read each test file and identify test functions with generated-output assertions. Apply the strong contracts and not-strong-by-default guidance above to determine if each is suspicious.
+## Assertion Pattern Guidance
 
 **Exact equality assertions — apply all 4 criteria:**
 - `compare_two_settings` / `compare_all_settings` — exact dict equality across two server configs
@@ -114,28 +78,16 @@ Read each test file and identify test functions with generated-output assertions
 - `torch.testing.assert_close` / `torch.allclose` — numeric tolerance is the contract
 - `pytest.approx` — explicit relative/absolute tolerance
 
-Group by file to avoid re-reading.
+## Classifications
 
-### What to extract
+| Classification | Meaning | Action |
+|---|---|---|
+| COINCIDENTALLY_CORRECT | All 4 criteria met | Needs fixing — add BI mode, tolerance, or golden strings |
+| STRONG_CONTRACT | Strong contract exists (cite clause) | Remove from list — exact match is correct by design |
+| HAS_UPDATE_PATH | Maintainer can refresh on PyTorch bump | Remove from list — golden/tolerance is the update path |
+| NOT_REALISTIC | Drift won't change outcome | Remove from list — breakage is not realistic |
 
-For each suspicious test function, identify the comparison and oracle, then rate each of the 4 inclusion criteria:
-
-1. **COMPARISON**: What two executions are compared? (e.g., "batch=1 vs batch=64", "eager vs compile", "vLLM vs HuggingFace")
-2. **ORACLE**: Assertion type (exact text, exact token ID, exact dict, match ratio, tolerance, smoke test)
-3. **BATCH_INVARIANT_ENABLED**: Check test file and conftest.py for `VLLM_BATCH_INVARIANT`
-4. **CODE_PATH_VERIFIED**: Does the test assert the feature actually ran?
-5. **FIXTURES**: Relevant autouse fixtures
-6. **Rate each criterion** from the Numeric Stability Audit Guidance:
-   - **C1 WEAK_ORACLE**: Does it use exact equality or a weak generated-output oracle?
-   - **C2 REALISTIC_BREAKAGE**: Could a PyTorch numeric/scheduling/compiler change realistically change the result?
-   - **C3 NO_UPDATE_PATH**: Is there no obvious fix on PyTorch bump (no golden to refresh, no tolerance to adjust)?
-   - **C4 NO_STRONG_CONTRACT**: Is there no contract requiring these executions to be identical? (Check the strong contracts list above)
-
-A test is COINCIDENTALLY_CORRECT only when all four are YES.
-
-For a complete worked example showing how to apply the criteria, see [example.md](example.md).
-
-## Output Format
+## Phase 1 Output Format (audit-agent)
 
 For each suspicious test function:
 
@@ -152,7 +104,7 @@ CANDIDATE: <test function name>
   C1_WEAK_ORACLE: yes/no — <brief reason>
   C2_REALISTIC_BREAKAGE: yes/no — <brief reason>
   C3_NO_UPDATE_PATH: yes/no — <brief reason>
-  C4_NO_STRONG_CONTRACT: yes/no — <cite clause number, e.g., "no, Strong Contract #5: streaming transport" or "yes, Not Strong #6: batch size invariance without BI mode">
+  C4_NO_STRONG_CONTRACT: yes/no — <cite clause number>
   CLASSIFICATION: <COINCIDENTALLY_CORRECT / STRONG_CONTRACT / HAS_UPDATE_PATH / NOT_REALISTIC>
   CODE_SNIPPET: |
     <assertion and surrounding context>
@@ -166,8 +118,21 @@ Test files in scope: <N>
 Candidates analyzed: <N>
 ```
 
-**Include your classification for each candidate. Phase 2 will adversarially verify.**
+## Phase 2 Output Format (review-agent)
 
-## Two-Phase Design
+For each candidate from Phase 1:
 
-Phase 2 (`test-audit-review`) must run in a **separate Claude invocation** to prevent bias propagation. This skill outputs structured evidence with initial classifications. Phase 2 independently verifies each claim.
+```
+CANDIDATE: <test function name>
+  PHASE_1_CLASSIFICATION: <what Phase 1 said>
+  VERDICT: AGREE / RECLASSIFY
+  C1_WEAK_ORACLE: <agree/disagree> — <reason if disagree>
+  C2_REALISTIC_BREAKAGE: <agree/disagree> — <reason if disagree>
+  C3_NO_UPDATE_PATH: <agree/disagree> — <reason if disagree>
+  C4_NO_STRONG_CONTRACT: <agree/disagree> — <cite clause if Phase 1 missed one>
+  FINAL_CLASSIFICATION: <COINCIDENTALLY_CORRECT / STRONG_CONTRACT / HAS_UPDATE_PATH / NOT_REALISTIC>
+  CODE_SNIPPET: |
+    <evidence from the source code supporting the verdict>
+```
+
+End with summary table and disagreement report.
