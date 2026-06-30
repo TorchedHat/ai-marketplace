@@ -1,123 +1,112 @@
 ---
 name: test-audit-review
 description: >-
-  Phase 2 of the two-phase test oracle auditor. Classify vLLM test candidates as
-  COINCIDENTALLY_CORRECT, STRONG_CONTRACT, or HAS_UPDATE_PATH. Takes structured
-  evidence from audit-pr (Phase 1) and applies the decision tree independently.
-  Must run in a separate Claude invocation from Phase 1 to prevent bias propagation.
+  Phase 2 of the two-phase test oracle auditor. Adversarially verify Phase 1
+  classifications of vLLM test candidates. Challenge each criterion rating,
+  reclassify where warranted. Use after audit-pr has produced structured
+  evidence with initial classifications.
 ---
 
-# Test Audit: Review (Phase 2)
+# Test Audit: Review (Phase 2) — Adversarial Verification
 
-Classify candidate tests through a formal decision tree. Takes structured evidence from `audit-pr` (Phase 1) or raw findings from `test-audit-explore` and produces a reviewed, classified list.
+You receive structured evidence with initial classifications from Phase 1 (`audit-pr`). Your job is to **adversarially verify** each claim — challenge the reasoning, check the criterion ratings, and reclassify where warranted.
 
-**You are Phase 2 of a two-phase pipeline. You receive structured evidence (facts about test assertions) and independently classify each candidate. You have no knowledge of Phase 1's reasoning — only its structured output. Your job is adversarial: find reasons to REMOVE candidates from the suspicious list (strong contract? update path? unrealistic drift?).**
+**You are the skeptic. For each candidate, try to find reasons Phase 1 got it wrong. Look for strong contracts Phase 1 missed, update paths it overlooked, or unrealistic breakage it assumed.**
 
 ## When to use
 
-- After `audit-pr` has produced structured evidence (PR-scoped, pre-filtered)
+- After `audit-pr` has produced structured evidence with classifications
 - When triaging a specific test that broke on a PyTorch upgrade
 - When deciding whether a test needs fixing or is actually correct
 - When reviewing a PR that adds a new cross-config comparison test
 
-## Review Workflow
+## How to Verify
 
-The review process moves candidates through a decision tree. Keep a broad raw candidate inventory — false positives are acceptable in the raw file.
+For each candidate from Phase 1, check the four criterion ratings:
 
-For each candidate:
+### C1 WEAK_ORACLE — Is the oracle actually weak?
 
-1. **Identify what two executions or outputs are being compared.**
-2. **Ask whether PyTorch/vLLM/product behavior requires those executions to be bitwise/text identical.** If yes → move to the reviewed/strong bucket with the contract named explicitly.
-3. **If no strong contract, ask whether a maintainer has an obvious update path on PyTorch bump** (refresh a golden, adjust a tolerance, tune a config).
-4. **Only keep it in the coincidentally correct list** when the answer is no and numeric drift has a realistic chance of changing the test outcome.
+Phase 1 may have flagged an assertion as weak when it's actually appropriate:
+- Did Phase 1 miss that the test uses `check_logprobs_close` (tolerance-based, not exact)?
+- Is the "exact equality" actually comparing within the same execution path (not cross-config)?
+- Is there a tolerance or threshold that Phase 1 overlooked?
 
-```
-candidate test
-    │
-    ├─ strong contract? ──yes──► STRONG_CONTRACT (remove from list)
-    │                              name the contract explicitly
-    │
-    ├─ update path? ──────yes──► HAS_UPDATE_PATH (remove from list)
-    │                              name the path (refresh golden, adjust tolerance)
-    │
-    ├─ realistic drift? ──yes──► COINCIDENTALLY_CORRECT (keep on list)
-    │                              needs fixing
-    │
-    └─ no ────────────────────► NOT_REALISTIC (remove from list)
-```
+### C2 REALISTIC_BREAKAGE — Would PyTorch changes actually break this?
 
-## Inclusion Criteria
+Phase 1 may overestimate breakage risk:
+- Are both sides using the same CUDA kernels in the same order?
+- Is the comparison within a single engine invocation (no kernel selection variance)?
+- Would the test need a truly exotic PyTorch change to break?
 
-A test is coincidentally correct only when **all four** are true:
+### C3 NO_UPDATE_PATH — Is there really no update path?
 
-1. **Weak oracle** — depends on exact generated text/token/logprob equality, match-ratio equality, or another weak generated-output oracle
-2. **Realistic breakage** — a PyTorch numeric/scheduling/compiler change has a realistic chance of changing the asserted value
-3. **No update path** — no obvious fix during a PyTorch version bump (refreshing a golden, adjusting a tolerance)
-4. **No strong contract** — no vLLM/PyTorch/product contract requires the two compared executions to be bitwise/text identical
+Phase 1 may miss obvious fixes:
+- Is there a golden constant that could be refreshed?
+- Could a tolerance be added or adjusted?
+- Is the reference output stored in a fixture or conftest that a maintainer could update?
 
-## Strong Contracts
+### C4 NO_STRONG_CONTRACT — Did Phase 1 miss a contract?
 
-These comparisons have genuine guarantees. Classify as `STRONG_CONTRACT` with the contract named:
+This is the most common Phase 1 error. Check against the numbered clauses below:
 
-| Contract | Why it holds |
-|----------|-------------|
-| Eager vs eager, same request sequence, same engine state, deterministic sampling | Same CUDA kernels in same order |
-| Same compile mode/artifact/config vs itself | Same optimization = same execution. Does NOT extend to different strategies |
-| Eager vs cudagraph for the SAME graph/execution family | Cudagraph replays exact captured kernel sequence |
-| CPU offload / prefetch offload / sleep-wake / reload / tensorizer / KV-transfer restoration | Data movement must not change model math |
-| Streaming vs non-streaming response reconstruction | API transport contract |
-| Duplicate identical requests in the same batch, same sampling | Same engine state, same padding, same kernels |
-| Same prompt + same explicit seed + same engine setup | Seeded determinism is an explicit vLLM contract |
-| Spec decode with explicitly forced batch-invariant mode/kernels | BI mode provides the contract |
-| `tests/v1/determinism/` | Autouse conftest sets `VLLM_BATCH_INVARIANT=1` |
+#### Strong Contracts
 
-## Not Strong By Default
+1. Eager vs eager with the same request sequence, same engine state, and deterministic sampling.
+2. Same compile mode/artifact/config vs itself. Does NOT extend to different compile strategies or fused distributed passes.
+3. Eager vs cudagraph for the same graph/execution family.
+4. CPU offload, prefetch offload, sleep/wake restoration, reload, tensorizer, and KV-transfer restoration — data movement/restoration should not change model math.
+5. Streaming vs non-streaming response reconstruction — API transport contract.
+6. Duplicate identical requests in the same batch with the same sampling settings.
+7. Same prompt with the same explicit seed in the same engine/request setup.
+8. Spec decode exact matching only when the test explicitly forces batch-invariant mode/kernels.
+9. Tests under `tests/v1/determinism/` get `VLLM_BATCH_INVARIANT=1` from the autouse `conftest.py` fixture — account for that before classifying as ordinary batch-invariance assumptions.
 
-These remain suspicious. Classify as `COINCIDENTALLY_CORRECT` unless the test explicitly establishes a stronger contract:
+#### Not Strong By Default
 
-| Comparison | Why no contract |
-|------------|----------------|
-| Eager vs compile | Inductor fuses kernels, reorders operations, changes reduction patterns |
-| Non-compiled vs compiled hidden inside `compare_two_settings` | Quietly asserts cross-mode parity via `assert ==` |
-| Different compile strategies / graph partitioning / fused passes vs baseline | Async TP, SP, fused all-reduce+norm — different math orderings |
-| TP vs PP vs EP exact equality | Each changes which GPU computes what, changing FP accumulation |
-| Batch size invariance (BS=1 vs BS=N) without `VLLM_BATCH_INVARIANT` | Different batch sizes change cuBLAS kernel selection |
-| Cascade attention with changed batch geometry | Changes batch size AND attention algorithm simultaneously |
-| Spec decode vs base exact matching without BI mode | Target verification runs at different seqlen = different kernel |
-| Prompt text vs prompt_embeds via generated text | Entirely different numerical paths |
-| Single vs batched multimodal without BI mode | Different batch = different padding = different kernels |
+1. Eager vs compile.
+2. Non-compiled vs compiled mode parity hidden inside `compare_two_settings` or `compare_all_settings`.
+3. Different compile strategies, graph partitioning strategies, or fused distributed compile passes versus baseline.
+4. Tensor parallel vs pipeline parallel vs expert parallel exact generated output equality.
+5. Sequence parallel, async TP, or fused distributed compile-pass parity against an unfused baseline.
+6. Batch size invariance, including BS=1 vs BS=N, unless batch-invariant kernels/mode are explicitly enabled by the test.
+7. Cascade attention vs non-cascade attention when the comparison also changes batch geometry.
+8. Spec decoding vs base decoding exact text/token/rank matching, or exact-match ratios, when target verification changes batch geometry and the test does not force batch-invariant mode.
+9. Prompt text vs prompt_embeds equality when the only oracle is final generated text.
+10. Single request vs first item in a larger multimodal batch, unless the test forces batch-invariant execution.
 
-## Excluded by Default
+#### Excluded by Default
 
-These are NOT coincidentally correct — classify as `HAS_UPDATE_PATH` or `NOT_REALISTIC`:
+1. **Golden output tests** — maintainer can refresh the fixture. Classify as HAS_UPDATE_PATH. Caveat: if the same golden is shared across TP=1/2/4, the implicit cross-TP assertion is uncontracted — note this.
+2. **Kernel tolerance tests** (`assert_close(atol=...)`, `torch.allclose`) — tolerance IS the contract. Classify as NOT_REALISTIC.
+3. **Difference-only tests** (`assert a != b`) — drift unlikely to flip. Classify as NOT_REALISTIC.
+4. **Smoke/liveness tests** (`assert len(output) > 0`) — FP changes don't produce empty output. Classify as NOT_REALISTIC.
 
-- **Golden output tests** (`== EXPECTED_OUTPUT` constant) — maintainer refreshes the golden. Update path exists (criterion 3 fails). **Caveat**: if the same golden is shared across TP=1/2/4, the implicit cross-TP assertion is uncontracted — note this but still classify as HAS_UPDATE_PATH.
-- **Kernel tolerance tests** (`assert_close(atol=1e-2)`) — tolerance IS the contract (criteria 3+4 fail).
-- **Difference-only tests** (`assert a != b`) — drift makes values closer, not equal (criterion 2 fails).
-- **Smoke/liveness tests** (`assert len(output) > 0`) — FP changes don't produce empty output (criterion 2 fails).
+## Verification Decision
+
+For each candidate, produce a verdict:
+
+- **AGREE** — Phase 1 classification is correct, all criterion ratings hold
+- **RECLASSIFY** — one or more criterion ratings are wrong, provide corrected classification
+- **NEEDS_CONTEXT** — cannot verify without reading additional code (name what's needed)
 
 ## Output Format
 
-For each test, output one line:
+For each candidate:
 
 ```
-test_name → CLASSIFICATION | contract/path/reason: <explanation>
+CANDIDATE: <test function name>
+  PHASE_1_CLASSIFICATION: <what Phase 1 said>
+  VERDICT: AGREE / RECLASSIFY / NEEDS_CONTEXT
+  C1_WEAK_ORACLE: <agree/disagree> — <reason if disagree>
+  C2_REALISTIC_BREAKAGE: <agree/disagree> — <reason if disagree>
+  C3_NO_UPDATE_PATH: <agree/disagree> — <reason if disagree>
+  C4_NO_STRONG_CONTRACT: <agree/disagree> — <cite clause if Phase 1 missed one>
+  FINAL_CLASSIFICATION: <COINCIDENTALLY_CORRECT / STRONG_CONTRACT / HAS_UPDATE_PATH / NOT_REALISTIC>
 ```
 
-### Examples
-
-```
-test_cascade_attention → COINCIDENTALLY_CORRECT | reason: batch=1 vs batch=64 without VLLM_BATCH_INVARIANT; cascade vs non-cascade kernel paths
-test_cpu_offload → STRONG_CONTRACT | contract: data restoration must not change model math
-test_chatglm3_lora_tp4 → HAS_UPDATE_PATH | path: refresh EXPECTED_LORA_OUTPUT golden constant
-test_streaming_input → STRONG_CONTRACT | contract: API transport — same engine/prompt/sampling, only input timing differs
-test_async_tp_pass_correctness → COINCIDENTALLY_CORRECT | reason: eager vs compile (fused gemm comms); not a strong contract
-test_mtp_correctness → COINCIDENTALLY_CORRECT | reason: spec decode without BI mode; 80% threshold has no principled update path
-```
+After all candidates:
 
 ## Summary Table
-
-After reviewing all candidates, produce a summary:
 
 | Classification | Count | Action |
 |---|---|---|
@@ -125,3 +114,7 @@ After reviewing all candidates, produce a summary:
 | STRONG_CONTRACT | N | Remove from list — exact match is correct by design |
 | HAS_UPDATE_PATH | N | Remove from list — maintainer can refresh on bump |
 | NOT_REALISTIC | N | Remove from list — drift won't change outcome |
+
+Also report:
+- How many Phase 1 classifications you agreed with
+- How many you reclassified (and the pattern — e.g., "3 reclassified from CC to STRONG_CONTRACT due to missed streaming contract")
