@@ -90,7 +90,7 @@ Both agents write structured JSON using `${CLAUDE_PLUGIN_ROOT}/scripts/output_ob
 
 **Phase 1** uses `AuditCandidate` and `AuditReport`, calls `write_split()` to produce `audit-cc.json` and `audit-not-cc.json`.
 
-**Phase 2** uses `ReviewCandidate` and `ReviewReport`, writes to `audit-review.json`.
+**Phase 2** uses `ReviewCandidate` and `ReviewReport`, writes to `review-cc.json`.
 
 Fields per candidate:
 
