@@ -23,7 +23,14 @@ Parse the structured evidence blocks from Phase 1. Each candidate has criterion 
 
 ### 2. Verify each candidate
 
-For each candidate, read the actual test file and challenge the four criterion ratings:
+For each candidate, read the actual test file and walk through this decision sequence:
+
+1. Identify what two executions or outputs are being compared.
+2. Ask whether PyTorch/vLLM/product behavior **requires** those executions to be bitwise/text identical. If yes → classify as STRONG_CONTRACT with the contract named explicitly.
+3. If no strong contract, ask whether a maintainer has an obvious update path on PyTorch bump (refresh a golden, adjust a tolerance, tune a config). If yes → classify as HAS_UPDATE_PATH.
+4. Only keep it as COINCIDENTALLY_CORRECT when the answer to both is no **and** numeric drift has a realistic chance of changing the test outcome.
+
+Then challenge Phase 1's four criterion ratings:
 
 **C1 WEAK_ORACLE** — Is the oracle actually weak?
 - Read the test function — did Phase 1 miss that it uses a tolerance-based assertion?
