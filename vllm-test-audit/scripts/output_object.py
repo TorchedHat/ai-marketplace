@@ -123,6 +123,18 @@ class ReviewReport:
     phase_1_reclassified: int
     candidates: list[ReviewCandidate] = field(default_factory=list)
 
+    def verify_coverage(self, cc_input_path: str) -> None:
+        """Assert every CC candidate from Phase 1 has a review entry."""
+        cc_data = json.loads(Path(cc_input_path).read_text())
+        expected = {c["candidate"] for c in cc_data["candidates"]}
+        reviewed = {c.candidate for c in self.candidates}
+        missing = expected - reviewed
+        if missing:
+            raise AssertionError(
+                f"Missing {len(missing)} review(s):\n"
+                + "\n".join(sorted(missing))
+            )
+
     def write_to_file(self, file_name: str) -> None:
         """Write report as JSON to the given file path."""
         Path(file_name).write_text(

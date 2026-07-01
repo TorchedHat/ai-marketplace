@@ -76,6 +76,7 @@ report = ReviewReport(
     ],
 )
 
+report.verify_coverage("../audit-cc.json")
 report.write_to_file("../audit-review.json")
 print(f"Wrote {len(report.candidates)} candidates to ../audit-review.json")
 ```
