@@ -95,6 +95,7 @@ For each suspicious test function:
 CANDIDATE: <test function name>
   FILE: <path>
   LINE: <line number>
+  VERDICT: <COINCIDENTALLY_CORRECT / NOT_COINCIDENTALLY_CORRECT>
   COMPARISON: <what two executions>
   ORACLE: <assertion type>
   HELPER: <helper function or "direct assertion">

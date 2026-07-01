@@ -60,15 +60,13 @@ For each candidate, decide:
 
 ### 4. Produce output
 
-Use the Phase 2 Output Format from the audit contract.
+**You MUST use the exact output format defined in the audit contract.** Do not write free-form prose, markdown headers, decision tree narratives, or bullet-point analysis. Every candidate must be a structured block matching the contract's output format with all fields present.
 
-After all candidates, report:
-- Summary table (COINCIDENTALLY_CORRECT / STRONG_CONTRACT / HAS_UPDATE_PATH / NOT_REALISTIC counts)
-- How many Phase 1 classifications you agreed with
-- How many you reclassified and the pattern (e.g., "3 reclassified from CC to STRONG_CONTRACT due to missed streaming contract")
+After all candidate blocks, end with the Evidence Summary and a summary table.
 
 ## Guardrails
 
+- **Follow the output format exactly** — no prose, no headers per candidate, no decision tree narratives. Structured blocks only.
 - Read the actual test files — do not verify based solely on Phase 1's code snippets
 - When you disagree, cite the specific clause Phase 1 should have applied
 - Default to skepticism — look for reasons to REMOVE candidates from the list
