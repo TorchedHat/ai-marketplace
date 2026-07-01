@@ -18,7 +18,7 @@ for response in responses:
     assert response.outputs[0].text == ref_output  # EXACT string match
 ```
 
-**Why it's coincidentally correct:** Compares batch=1 vs batch=64 via exact string equality without `VLLM_BATCH_INVARIANT`. No strong contract (Not Strong #6). Reference is self-generated, not a refreshable golden. PyTorch issue 182700 showed this breaks.
+**Why it's coincidentally correct:** Compares batch=1 vs batch=64 via exact string equality without `VLLM_BATCH_INVARIANT`. No strong contract (Not Strong #6). PyTorch issue 182700 showed this breaks.
 
 ### Phase 1 output
 
@@ -43,8 +43,7 @@ report = AuditReport(
             fixtures="@create_new_process_for_each_test()",
             c1_weak_oracle="yes — exact string == on generated text",
             c2_realistic_breakage="yes — PyTorch #182700, cuBLAS kernel selection changes with batch size",
-            c3_no_update_path="yes — reference is self-generated at batch=1, not a refreshable golden",
-            c4_no_strong_contract="yes — Not Strong #6: batch size invariance without BI mode",
+            c3_no_strong_contract="yes — Not Strong #6: batch size invariance without BI mode",
             classification="COINCIDENTALLY_CORRECT",
             verdict="COINCIDENTALLY_CORRECT",
             code_snippet="prompts = [example_system_message + prompt] * 64\nresponses = llm.generate(prompts, sampling_params)\nfor response in responses:\n    assert response.outputs[0].text == ref_output",
@@ -83,8 +82,7 @@ report = ReviewReport(
             fixtures="@create_new_process_for_each_test()",
             c1_weak_oracle="agree — exact string == on generated text",
             c2_realistic_breakage="agree — cuBLAS kernel selection changes with batch size",
-            c3_no_update_path="agree — reference is self-generated, not a refreshable golden",
-            c4_no_strong_contract="agree — Not Strong #6: batch size invariance without BI mode",
+            c3_no_strong_contract="agree — Not Strong #6: batch size invariance without BI mode",
             classification="COINCIDENTALLY_CORRECT",
             verdict="COINCIDENTALLY_CORRECT",
             code_snippet="prompts = [example_system_message + prompt] * 64\nfor response in responses:\n    assert response.outputs[0].text == ref_output",
@@ -97,7 +95,7 @@ report.write_to_file("../audit-review.json")
 
 ## Example 2: test_cpu_offload (Phase 2 reclassifies)
 
-Shows Phase 2 catching a Phase 1 error. Phase 1 classified as COINCIDENTALLY_CORRECT, Phase 2 identifies Strong Contract #4.
+Shows Phase 2 catching a Phase 1 error. Phase 1 classified as COINCIDENTALLY_CORRECT, Phase 2 identifies Strong Contract #5.
 
 ### Phase 1 output (incorrect)
 
@@ -114,8 +112,7 @@ AuditCandidate(
     fixtures="none relevant",
     c1_weak_oracle="yes — exact dict equality via compare_two_settings",
     c2_realistic_breakage="yes — different loading paths may use different kernels",
-    c3_no_update_path="yes — no golden to refresh",
-    c4_no_strong_contract="yes — no contract found",
+    c3_no_strong_contract="yes — no contract found",
     classification="COINCIDENTALLY_CORRECT",
     verdict="COINCIDENTALLY_CORRECT",
     code_snippet="compare_two_settings(model, base_args, offload_args)",
@@ -129,7 +126,7 @@ ReviewCandidate(
     candidate="test_cpu_offload",
     phase_1_classification="COINCIDENTALLY_CORRECT",
     phase_1_verdict="COINCIDENTALLY_CORRECT",
-    review="RECLASSIFY — Phase 1 missed Strong Contract #4",
+    review="RECLASSIFY — Phase 1 missed Strong Contract #5",
     file="tests/basic_correctness/test_cpu_offload.py",
     line=42,
     comparison="normal loading vs CPU offload loading",
@@ -140,12 +137,11 @@ ReviewCandidate(
     fixtures="none relevant",
     c1_weak_oracle="agree — exact dict equality",
     c2_realistic_breakage="disagree — data movement uses identical kernels, no numeric divergence",
-    c3_no_update_path="agree — no golden to refresh",
-    c4_no_strong_contract="disagree — Strong Contract #4: CPU offload must not change math",
+    c3_no_strong_contract="disagree — Strong Contract #5: CPU offload must not change math",
     classification="STRONG_CONTRACT",
     verdict="NOT_COINCIDENTALLY_CORRECT",
     code_snippet="compare_two_settings(model, base_args, offload_args)",
 )
 ```
 
-C2 is "disagree" and C4 cites Strong Contract #4, so Phase 2 reclassifies from COINCIDENTALLY_CORRECT to STRONG_CONTRACT.
+C2 is "disagree" and C3 cites Strong Contract #5, so Phase 2 reclassifies from COINCIDENTALLY_CORRECT to STRONG_CONTRACT.

@@ -27,10 +27,9 @@ For each candidate, read the actual test file and walk through this decision seq
 
 1. Identify what two executions or outputs are being compared.
 2. Ask whether PyTorch/vLLM/product behavior **requires** those executions to be bitwise/text identical. If yes → classify as STRONG_CONTRACT with the contract named explicitly.
-3. If no strong contract, ask whether a maintainer has an obvious update path on PyTorch bump (refresh a golden, adjust a tolerance, tune a config). If yes → classify as HAS_UPDATE_PATH.
-4. Only keep it as COINCIDENTALLY_CORRECT when the answer to both is no **and** numeric drift has a realistic chance of changing the test outcome.
+3. Only keep it as COINCIDENTALLY_CORRECT when there is no strong contract **and** numeric drift has a realistic chance of changing the test outcome.
 
-Then challenge Phase 1's four criterion ratings (C1-C4).
+Then challenge Phase 1's three criterion ratings (C1-C3).
 
 ### 3. Produce verdict
 
@@ -68,8 +67,7 @@ report = ReviewReport(
             fixtures="relevant fixtures",
             c1_weak_oracle="agree — reason",
             c2_realistic_breakage="agree — reason",
-            c3_no_update_path="agree — reason",
-            c4_no_strong_contract="agree — Not Strong #6: reason",
+            c3_no_strong_contract="agree — Not Strong #6: reason",
             classification="COINCIDENTALLY_CORRECT",
             verdict="COINCIDENTALLY_CORRECT",
             code_snippet="the assertion code",

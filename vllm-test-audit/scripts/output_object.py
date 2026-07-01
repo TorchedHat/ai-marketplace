@@ -20,8 +20,7 @@ class AuditCandidate:
     fixtures: str
     c1_weak_oracle: str
     c2_realistic_breakage: str
-    c3_no_update_path: str
-    c4_no_strong_contract: str
+    c3_no_strong_contract: str
     classification: str
     verdict: str
     code_snippet: str = ""
@@ -45,8 +44,7 @@ class ReviewCandidate:
     fixtures: str
     c1_weak_oracle: str
     c2_realistic_breakage: str
-    c3_no_update_path: str
-    c4_no_strong_contract: str
+    c3_no_strong_contract: str
     classification: str
     verdict: str
     code_snippet: str = ""
@@ -59,6 +57,28 @@ class AuditReport:
     test_files_in_scope: int
     candidates_analyzed: int
     candidates: list[AuditCandidate] = field(default_factory=list)
+
+    def verify_coverage(self, expected_tests: list[str]) -> None:
+        """Assert every test from list_tests.sh output has a candidate entry.
+
+        Args:
+            expected_tests: list of "DIR,FILE,FUNCTION" csv lines from list_tests.sh
+        """
+        expected = set()
+        for line in expected_tests:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(",")
+            if len(parts) == 3:
+                expected.add(parts[2])
+        analyzed = {c.candidate for c in self.candidates}
+        missing = expected - analyzed
+        if missing:
+            raise AssertionError(
+                f"Missing {len(missing)} test(s) from report:\n"
+                + "\n".join(sorted(missing))
+            )
 
     def write_to_file(self, file_name: str) -> None:
         """Write report as JSON to the given file path."""
