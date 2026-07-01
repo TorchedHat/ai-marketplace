@@ -87,53 +87,34 @@ These remain suspicious unless the test explicitly establishes a stronger contra
 | HAS_UPDATE_PATH | Maintainer can refresh on PyTorch bump | Remove from list — golden/tolerance is the update path |
 | NOT_REALISTIC | Drift won't change outcome | Remove from list — breakage is not realistic |
 
-## Phase 1 Output Format (audit-agent)
+## Output Format
 
-For each suspicious test function:
+Both agents write structured JSON using `${CLAUDE_PLUGIN_ROOT}/scripts/output_object.py`. See [example.md](example.md) for complete worked examples.
 
-```
-CANDIDATE: <test function name>
-  FILE: <path>
-  LINE: <line number>
-  VERDICT: <COINCIDENTALLY_CORRECT / NOT_COINCIDENTALLY_CORRECT>
-  COMPARISON: <what two executions>
-  ORACLE: <assertion type>
-  HELPER: <helper function or "direct assertion">
-  BATCH_INVARIANT_ENABLED: yes/no
-  CODE_PATH_VERIFIED: yes/no
-  FIXTURES: <relevant fixtures>
-  C1_WEAK_ORACLE: yes/no — <brief reason>
-  C2_REALISTIC_BREAKAGE: yes/no — <brief reason>
-  C3_NO_UPDATE_PATH: yes/no — <brief reason>
-  C4_NO_STRONG_CONTRACT: yes/no — <cite clause number>
-  CLASSIFICATION: <COINCIDENTALLY_CORRECT / STRONG_CONTRACT / HAS_UPDATE_PATH / NOT_REALISTIC>
-  CODE_SNIPPET: |
-    <assertion and surrounding context>
-```
+**Phase 1** uses `AuditCandidate` and `AuditReport`, writes to `audit-evidence.json`.
 
-End with:
+**Phase 2** uses `ReviewCandidate` and `ReviewReport`, writes to `audit-review.json`.
 
-```
-# Evidence Summary
-Test files in scope: <N>
-Candidates analyzed: <N>
-```
+Fields per candidate:
 
-## Phase 2 Output Format (review-agent)
-
-For each candidate from Phase 1:
-
-```
-CANDIDATE: <test function name>
-  PHASE_1_CLASSIFICATION: <what Phase 1 said>
-  VERDICT: AGREE / RECLASSIFY
-  C1_WEAK_ORACLE: <agree/disagree> — <reason if disagree>
-  C2_REALISTIC_BREAKAGE: <agree/disagree> — <reason if disagree>
-  C3_NO_UPDATE_PATH: <agree/disagree> — <reason if disagree>
-  C4_NO_STRONG_CONTRACT: <agree/disagree> — <cite clause if Phase 1 missed one>
-  FINAL_CLASSIFICATION: <COINCIDENTALLY_CORRECT / STRONG_CONTRACT / HAS_UPDATE_PATH / NOT_REALISTIC>
-  CODE_SNIPPET: |
-    <evidence from the source code supporting the verdict>
-```
-
-End with summary table and disagreement report.
+| Field | Phase 1 | Phase 2 | Description |
+|-------|---------|---------|-------------|
+| candidate | yes | yes | Test function name |
+| file | yes | yes | Test file path |
+| line | yes | yes | Line number of assertion |
+| comparison | yes | yes | What two executions are compared |
+| oracle | yes | yes | Assertion type |
+| helper | yes | yes | Helper function or "direct assertion" |
+| batch_invariant_enabled | yes | yes | Whether VLLM_BATCH_INVARIANT is set |
+| code_path_verified | yes | yes | Whether test asserts feature ran |
+| fixtures | yes | yes | Relevant autouse fixtures |
+| c1_weak_oracle | yes | yes | Phase 1: "yes/no — reason". Phase 2: "agree/disagree — reason" |
+| c2_realistic_breakage | yes | yes | Same pattern |
+| c3_no_update_path | yes | yes | Same pattern |
+| c4_no_strong_contract | yes | yes | Cite clause number |
+| classification | yes | yes | COINCIDENTALLY_CORRECT / STRONG_CONTRACT / HAS_UPDATE_PATH / NOT_REALISTIC |
+| verdict | yes | yes | COINCIDENTALLY_CORRECT / NOT_COINCIDENTALLY_CORRECT |
+| code_snippet | yes | yes | Assertion and surrounding context |
+| phase_1_classification | — | yes | What Phase 1 said |
+| phase_1_verdict | — | yes | What Phase 1 said |
+| review | — | yes | AGREE / RECLASSIFY — reason |

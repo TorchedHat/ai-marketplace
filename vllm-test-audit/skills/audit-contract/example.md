@@ -22,121 +22,130 @@ for response in responses:
 
 ### Phase 1 output
 
-```
-CANDIDATE: test_cascade_attention
-  FILE: tests/v1/e2e/general/test_cascade_attention.py
-  LINE: 43
-  COMPARISON: batch=1 vs batch=64
-  ORACLE: exact text equality (assert .text ==)
-  HELPER: direct assertion
-  BATCH_INVARIANT_ENABLED: no
-  CODE_PATH_VERIFIED: no
-  FIXTURES: @create_new_process_for_each_test()
-  C1_WEAK_ORACLE: yes — exact string == on generated text
-  C2_REALISTIC_BREAKAGE: yes — PyTorch #182700, cuBLAS kernel selection changes with batch size
-  C3_NO_UPDATE_PATH: yes — reference is self-generated at batch=1, not a refreshable golden
-  C4_NO_STRONG_CONTRACT: yes — Not Strong #6: batch size invariance without BI mode
-  CLASSIFICATION: COINCIDENTALLY_CORRECT
-  VERDICT: COINCIDENTALLY_CORRECT
-  CODE_SNIPPET: |
-    prompts = [example_system_message + prompt] * 64
-    responses = llm.generate(prompts, sampling_params)
-    for response in responses:
-        assert response.outputs[0].text == ref_output
+```python
+import sys
+sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/scripts")
+from output_object import AuditCandidate, AuditReport
+
+report = AuditReport(
+    test_files_in_scope=1,
+    candidates_analyzed=1,
+    candidates=[
+        AuditCandidate(
+            candidate="test_cascade_attention",
+            file="tests/v1/e2e/general/test_cascade_attention.py",
+            line=43,
+            comparison="batch=1 vs batch=64",
+            oracle="exact text equality (assert .text ==)",
+            helper="direct assertion",
+            batch_invariant_enabled=False,
+            code_path_verified=False,
+            fixtures="@create_new_process_for_each_test()",
+            c1_weak_oracle="yes — exact string == on generated text",
+            c2_realistic_breakage="yes — PyTorch #182700, cuBLAS kernel selection changes with batch size",
+            c3_no_update_path="yes — reference is self-generated at batch=1, not a refreshable golden",
+            c4_no_strong_contract="yes — Not Strong #6: batch size invariance without BI mode",
+            classification="COINCIDENTALLY_CORRECT",
+            verdict="COINCIDENTALLY_CORRECT",
+            code_snippet="prompts = [example_system_message + prompt] * 64\nresponses = llm.generate(prompts, sampling_params)\nfor response in responses:\n    assert response.outputs[0].text == ref_output",
+        ),
+    ],
+)
+
+report.write_to_file("../audit-evidence.json")
 ```
 
 ### Phase 2 output (AGREE)
 
-```
-CANDIDATE: test_cascade_attention
-  PHASE_1_CLASSIFICATION: COINCIDENTALLY_CORRECT
-  PHASE_1_VERDICT: COINCIDENTALLY_CORRECT
-  REVIEW: AGREE
-  FILE: tests/v1/e2e/general/test_cascade_attention.py
-  LINE: 43
-  COMPARISON: batch=1 vs batch=64
-  ORACLE: exact text equality (assert .text ==)
-  HELPER: direct assertion
-  BATCH_INVARIANT_ENABLED: no
-  CODE_PATH_VERIFIED: no
-  FIXTURES: @create_new_process_for_each_test()
-  C1_WEAK_ORACLE: agree — exact string == on generated text
-  C2_REALISTIC_BREAKAGE: agree — cuBLAS kernel selection changes with batch size
-  C3_NO_UPDATE_PATH: agree — reference is self-generated, not a refreshable golden
-  C4_NO_STRONG_CONTRACT: agree — Not Strong #6: batch size invariance without BI mode
-  CLASSIFICATION: COINCIDENTALLY_CORRECT
-  VERDICT: COINCIDENTALLY_CORRECT
-  CODE_SNIPPET: |
-    prompts = [example_system_message + prompt] * 64
-    for response in responses:
-        assert response.outputs[0].text == ref_output
+```python
+import sys
+sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/scripts")
+from output_object import ReviewCandidate, ReviewReport
+
+report = ReviewReport(
+    test_files_in_scope=1,
+    candidates_analyzed=1,
+    phase_1_agreed=1,
+    phase_1_reclassified=0,
+    candidates=[
+        ReviewCandidate(
+            candidate="test_cascade_attention",
+            phase_1_classification="COINCIDENTALLY_CORRECT",
+            phase_1_verdict="COINCIDENTALLY_CORRECT",
+            review="AGREE",
+            file="tests/v1/e2e/general/test_cascade_attention.py",
+            line=43,
+            comparison="batch=1 vs batch=64",
+            oracle="exact text equality (assert .text ==)",
+            helper="direct assertion",
+            batch_invariant_enabled=False,
+            code_path_verified=False,
+            fixtures="@create_new_process_for_each_test()",
+            c1_weak_oracle="agree — exact string == on generated text",
+            c2_realistic_breakage="agree — cuBLAS kernel selection changes with batch size",
+            c3_no_update_path="agree — reference is self-generated, not a refreshable golden",
+            c4_no_strong_contract="agree — Not Strong #6: batch size invariance without BI mode",
+            classification="COINCIDENTALLY_CORRECT",
+            verdict="COINCIDENTALLY_CORRECT",
+            code_snippet="prompts = [example_system_message + prompt] * 64\nfor response in responses:\n    assert response.outputs[0].text == ref_output",
+        ),
+    ],
+)
+
+report.write_to_file("../audit-review.json")
 ```
 
-## Example 2: test_cpu_offload (STRONG_CONTRACT — Phase 2 reclassifies)
+## Example 2: test_cpu_offload (Phase 2 reclassifies)
 
 Shows Phase 2 catching a Phase 1 error. Phase 1 classified as COINCIDENTALLY_CORRECT, Phase 2 identifies Strong Contract #4.
 
 ### Phase 1 output (incorrect)
 
-```
-CANDIDATE: test_cpu_offload
-  FILE: tests/basic_correctness/test_cpu_offload.py
-  LINE: 42
-  COMPARISON: normal loading vs CPU offload loading
-  ORACLE: exact dict equality (compare_two_settings)
-  HELPER: compare_two_settings
-  BATCH_INVARIANT_ENABLED: no
-  CODE_PATH_VERIFIED: no
-  FIXTURES: none relevant
-  C1_WEAK_ORACLE: yes — exact dict equality via compare_two_settings
-  C2_REALISTIC_BREAKAGE: yes — different loading paths may use different kernels
-  C3_NO_UPDATE_PATH: yes — no golden to refresh
-  C4_NO_STRONG_CONTRACT: yes — no contract found
-  CLASSIFICATION: COINCIDENTALLY_CORRECT
-  VERDICT: COINCIDENTALLY_CORRECT
-  CODE_SNIPPET: |
-    compare_two_settings(model, base_args, offload_args)
+```python
+AuditCandidate(
+    candidate="test_cpu_offload",
+    file="tests/basic_correctness/test_cpu_offload.py",
+    line=42,
+    comparison="normal loading vs CPU offload loading",
+    oracle="exact dict equality (compare_two_settings)",
+    helper="compare_two_settings",
+    batch_invariant_enabled=False,
+    code_path_verified=False,
+    fixtures="none relevant",
+    c1_weak_oracle="yes — exact dict equality via compare_two_settings",
+    c2_realistic_breakage="yes — different loading paths may use different kernels",
+    c3_no_update_path="yes — no golden to refresh",
+    c4_no_strong_contract="yes — no contract found",
+    classification="COINCIDENTALLY_CORRECT",
+    verdict="COINCIDENTALLY_CORRECT",
+    code_snippet="compare_two_settings(model, base_args, offload_args)",
+)
 ```
 
 ### Phase 2 output (RECLASSIFY)
 
-```
-CANDIDATE: test_cpu_offload
-  PHASE_1_CLASSIFICATION: COINCIDENTALLY_CORRECT
-  PHASE_1_VERDICT: COINCIDENTALLY_CORRECT
-  REVIEW: RECLASSIFY — Phase 1 missed Strong Contract #4
-  FILE: tests/basic_correctness/test_cpu_offload.py
-  LINE: 42
-  COMPARISON: normal loading vs CPU offload loading
-  ORACLE: exact dict equality (compare_two_settings)
-  HELPER: compare_two_settings
-  BATCH_INVARIANT_ENABLED: no
-  CODE_PATH_VERIFIED: no
-  FIXTURES: none relevant
-  C1_WEAK_ORACLE: agree — exact dict equality
-  C2_REALISTIC_BREAKAGE: disagree — data movement uses identical kernels, no numeric divergence
-  C3_NO_UPDATE_PATH: agree — no golden to refresh
-  C4_NO_STRONG_CONTRACT: disagree — Strong Contract #4: CPU offload must not change math
-  CLASSIFICATION: STRONG_CONTRACT
-  VERDICT: NOT_COINCIDENTALLY_CORRECT
-  CODE_SNIPPET: |
-    compare_two_settings(model, base_args, offload_args)
-```
-
-## What NOT to do
-
-Do not write Phase 2 output like this:
-
-```
-### Candidate 1: test_cascade_attention
-
-**What's compared:** batch=1 vs batch=64...
-
-**Decision tree:**
-1. **Strong contract?** No...
-2. **Update path?** No...
-
-test_cascade_attention → COINCIDENTALLY_CORRECT | reason: ...
+```python
+ReviewCandidate(
+    candidate="test_cpu_offload",
+    phase_1_classification="COINCIDENTALLY_CORRECT",
+    phase_1_verdict="COINCIDENTALLY_CORRECT",
+    review="RECLASSIFY — Phase 1 missed Strong Contract #4",
+    file="tests/basic_correctness/test_cpu_offload.py",
+    line=42,
+    comparison="normal loading vs CPU offload loading",
+    oracle="exact dict equality (compare_two_settings)",
+    helper="compare_two_settings",
+    batch_invariant_enabled=False,
+    code_path_verified=False,
+    fixtures="none relevant",
+    c1_weak_oracle="agree — exact dict equality",
+    c2_realistic_breakage="disagree — data movement uses identical kernels, no numeric divergence",
+    c3_no_update_path="agree — no golden to refresh",
+    c4_no_strong_contract="disagree — Strong Contract #4: CPU offload must not change math",
+    classification="STRONG_CONTRACT",
+    verdict="NOT_COINCIDENTALLY_CORRECT",
+    code_snippet="compare_two_settings(model, base_args, offload_args)",
+)
 ```
 
-This is prose. Every candidate must be a structured block with all fields. No `###` headers, no `**bold labels:**`, no numbered decision trees per candidate.
+C2 is "disagree" and C4 cites Strong Contract #4, so Phase 2 reclassifies from COINCIDENTALLY_CORRECT to STRONG_CONTRACT.
