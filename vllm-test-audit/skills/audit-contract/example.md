@@ -45,7 +45,7 @@ report = AuditReport(
             c2_realistic_breakage="yes — PyTorch #182700, cuBLAS kernel selection changes with batch size",
             c3_no_strong_contract="yes — Not Strong #6: batch size invariance without BI mode",
             classification="COINCIDENTALLY_CORRECT",
-            verdict="COINCIDENTALLY_CORRECT",
+            coincidentally_correct=True,
             code_snippet="prompts = [example_system_message + prompt] * 64\nresponses = llm.generate(prompts, sampling_params)\nfor response in responses:\n    assert response.outputs[0].text == ref_output",
         ),
     ],
@@ -61,16 +61,18 @@ import sys
 sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/scripts")
 from output_object import ReviewCandidate, ReviewReport
 
+cc_candidates = ReviewReport.load_cc_candidates("../audit-evidence.json")
+
 report = ReviewReport(
     test_files_in_scope=1,
-    candidates_analyzed=1,
+    candidates_analyzed=len(cc_candidates),
     phase_1_agreed=1,
     phase_1_reclassified=0,
     candidates=[
         ReviewCandidate(
             candidate="test_cascade_attention",
             phase_1_classification="COINCIDENTALLY_CORRECT",
-            phase_1_verdict="COINCIDENTALLY_CORRECT",
+            phase_1_coincidentally_correct=True,
             review="AGREE",
             file="tests/v1/e2e/general/test_cascade_attention.py",
             line=43,
@@ -84,7 +86,7 @@ report = ReviewReport(
             c2_realistic_breakage="agree — cuBLAS kernel selection changes with batch size",
             c3_no_strong_contract="agree — Not Strong #6: batch size invariance without BI mode",
             classification="COINCIDENTALLY_CORRECT",
-            verdict="COINCIDENTALLY_CORRECT",
+            coincidentally_correct=True,
             code_snippet="prompts = [example_system_message + prompt] * 64\nfor response in responses:\n    assert response.outputs[0].text == ref_output",
         ),
     ],
@@ -114,7 +116,7 @@ AuditCandidate(
     c2_realistic_breakage="yes — different loading paths may use different kernels",
     c3_no_strong_contract="yes — no contract found",
     classification="COINCIDENTALLY_CORRECT",
-    verdict="COINCIDENTALLY_CORRECT",
+    coincidentally_correct=True,
     code_snippet="compare_two_settings(model, base_args, offload_args)",
 )
 ```
@@ -125,7 +127,7 @@ AuditCandidate(
 ReviewCandidate(
     candidate="test_cpu_offload",
     phase_1_classification="COINCIDENTALLY_CORRECT",
-    phase_1_verdict="COINCIDENTALLY_CORRECT",
+    phase_1_coincidentally_correct=True,
     review="RECLASSIFY — Phase 1 missed Strong Contract #5",
     file="tests/basic_correctness/test_cpu_offload.py",
     line=42,
@@ -139,9 +141,9 @@ ReviewCandidate(
     c2_realistic_breakage="disagree — data movement uses identical kernels, no numeric divergence",
     c3_no_strong_contract="disagree — Strong Contract #5: CPU offload must not change math",
     classification="STRONG_CONTRACT",
-    verdict="NOT_COINCIDENTALLY_CORRECT",
+    coincidentally_correct=False,
     code_snippet="compare_two_settings(model, base_args, offload_args)",
 )
 ```
 
-C2 is "disagree" and C3 cites Strong Contract #5, so Phase 2 reclassifies from COINCIDENTALLY_CORRECT to STRONG_CONTRACT.
+C2 is "disagree" and C3 cites Strong Contract #5, so Phase 2 reclassifies. `coincidentally_correct` flips from `True` to `False`.

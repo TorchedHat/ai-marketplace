@@ -22,7 +22,7 @@ class AuditCandidate:
     c2_realistic_breakage: str
     c3_no_strong_contract: str
     classification: str
-    verdict: str
+    coincidentally_correct: bool
     code_snippet: str = ""
 
 
@@ -32,7 +32,7 @@ class ReviewCandidate:
 
     candidate: str
     phase_1_classification: str
-    phase_1_verdict: str
+    phase_1_coincidentally_correct: bool
     review: str
     file: str
     line: int
@@ -46,7 +46,7 @@ class ReviewCandidate:
     c2_realistic_breakage: str
     c3_no_strong_contract: str
     classification: str
-    verdict: str
+    coincidentally_correct: bool
     code_snippet: str = ""
 
 
@@ -96,6 +96,12 @@ class ReviewReport:
     phase_1_agreed: int
     phase_1_reclassified: int
     candidates: list[ReviewCandidate] = field(default_factory=list)
+
+    @staticmethod
+    def load_cc_candidates(phase_1_path: str) -> list[dict]:
+        """Load Phase 1 JSON and return only coincidentally_correct candidates."""
+        data = json.loads(Path(phase_1_path).read_text())
+        return [c for c in data["candidates"] if c["coincidentally_correct"]]
 
     def write_to_file(self, file_name: str) -> None:
         """Write report as JSON to the given file path."""

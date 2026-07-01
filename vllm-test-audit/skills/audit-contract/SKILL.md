@@ -109,8 +109,8 @@ Fields per candidate:
 | c2_realistic_breakage | yes | yes | Same pattern |
 | c3_no_strong_contract | yes | yes | Cite clause number |
 | classification | yes | yes | COINCIDENTALLY_CORRECT / STRONG_CONTRACT / NOT_REALISTIC |
-| verdict | yes | yes | COINCIDENTALLY_CORRECT / NOT_COINCIDENTALLY_CORRECT |
+| coincidentally_correct | yes | yes | true / false |
 | code_snippet | yes | yes | Assertion and surrounding context |
 | phase_1_classification | — | yes | What Phase 1 said |
-| phase_1_verdict | — | yes | What Phase 1 said |
+| phase_1_coincidentally_correct | — | yes | What Phase 1 said (true/false) |
 | review | — | yes | AGREE / RECLASSIFY — reason |

@@ -80,7 +80,7 @@ report = AuditReport(
             c2_realistic_breakage="yes — reason",
             c3_no_strong_contract="yes — Not Strong #6: reason",
             classification="COINCIDENTALLY_CORRECT",
-            verdict="COINCIDENTALLY_CORRECT",
+            coincidentally_correct=True,
             code_snippet="the assertion code",
         ),
         # ... more candidates
