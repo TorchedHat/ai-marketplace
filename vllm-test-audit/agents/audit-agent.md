@@ -47,15 +47,48 @@ Read each test file and identify test functions with generated-output assertions
 
 Group by file to avoid re-reading.
 
-### 3. Produce output
+### 3. Write structured output
 
-Use the Phase 1 Output Format from the audit contract. Include your classification for each candidate — Phase 2 will adversarially verify.
+After analysis, write results as JSON using the output object script. Run this Python code, filling in the fields for each candidate you found:
 
-End with the Evidence Summary.
+```python
+import sys
+sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/scripts")
+from output_object import AuditCandidate, AuditReport
+
+report = AuditReport(
+    test_files_in_scope=<N>,
+    candidates_analyzed=<N>,
+    candidates=[
+        AuditCandidate(
+            candidate="test_name",
+            file="tests/path/to/file.py",
+            line=123,
+            comparison="what two executions are compared",
+            oracle="assertion type",
+            helper="helper function or direct assertion",
+            batch_invariant_enabled=False,
+            code_path_verified=False,
+            fixtures="relevant fixtures",
+            c1_weak_oracle="yes — reason",
+            c2_realistic_breakage="yes — reason",
+            c3_no_update_path="yes — reason",
+            c4_no_strong_contract="yes — Not Strong #6: reason",
+            classification="COINCIDENTALLY_CORRECT",
+            verdict="COINCIDENTALLY_CORRECT",
+            code_snippet="the assertion code",
+        ),
+        # ... more candidates
+    ],
+)
+
+report.write_to_file("../audit-evidence.json")
+print(f"Wrote {len(report.candidates)} candidates to ../audit-evidence.json")
+```
 
 ## Guardrails
 
-- You produce structured evidence with initial classifications
+- You MUST write output using the Python output object — do not write prose to stdout
 - Phase 2 will challenge your reasoning — be precise in your criterion ratings and clause citations
 - Cite specific clause numbers (e.g., "Strong Contract #5", "Not Strong #6") so Phase 2 can look them up
 - When unsure about a criterion, say so — don't force a yes/no
