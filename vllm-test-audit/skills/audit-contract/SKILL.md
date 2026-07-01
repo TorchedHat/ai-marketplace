@@ -88,7 +88,7 @@ These remain suspicious unless the test explicitly establishes a stronger contra
 
 Both agents write structured JSON using `${CLAUDE_PLUGIN_ROOT}/scripts/output_object.py`. See [example.md](example.md) for complete worked examples.
 
-**Phase 1** uses `AuditCandidate` and `AuditReport`, writes to `audit-evidence.json`.
+**Phase 1** uses `AuditCandidate` and `AuditReport`, calls `write_split()` to produce `audit-cc.json` and `audit-not-cc.json`.
 
 **Phase 2** uses `ReviewCandidate` and `ReviewReport`, writes to `audit-review.json`.
 

@@ -89,8 +89,7 @@ report = AuditReport(
 
 expected_tests = open("../test_list.csv").read().strip().splitlines()
 report.verify_coverage(expected_tests)
-report.write_to_file("../audit-evidence.json")
-print(f"Wrote {len(report.candidates)} candidates to ../audit-evidence.json")
+report.write_split("../audit-cc.json", "../audit-not-cc.json")
 ```
 
 ## Guardrails

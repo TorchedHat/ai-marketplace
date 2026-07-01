@@ -19,7 +19,7 @@ You are the Phase 2 reviewer. You run in an environment with the vLLM repository
 
 ### 1. Read Phase 1 output
 
-Read the Phase 1 JSON file using `ReviewReport.load_cc_candidates("../audit-evidence.json")`. This filters to only candidates where `coincidentally_correct` is `true`. Skip all others — Phase 2 only verifies CC classifications to eliminate false positives.
+Read the CC candidates file (e.g., `../audit-cc.json`). This file contains only candidates that Phase 1 classified as coincidentally correct. Verify each one.
 
 ### 2. Verify each candidate
 

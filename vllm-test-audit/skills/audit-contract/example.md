@@ -51,7 +51,9 @@ report = AuditReport(
     ],
 )
 
-report.write_to_file("../audit-evidence.json")
+expected_tests = open("../test_list.csv").read().strip().splitlines()
+report.verify_coverage(expected_tests)
+report.write_split("../audit-cc.json", "../audit-not-cc.json")
 ```
 
 ### Phase 2 output (AGREE)
@@ -61,11 +63,9 @@ import sys
 sys.path.insert(0, "${CLAUDE_PLUGIN_ROOT}/scripts")
 from output_object import ReviewCandidate, ReviewReport
 
-cc_candidates = ReviewReport.load_cc_candidates("../audit-evidence.json")
-
 report = ReviewReport(
     test_files_in_scope=1,
-    candidates_analyzed=len(cc_candidates),
+    candidates_analyzed=1,
     phase_1_agreed=1,
     phase_1_reclassified=0,
     candidates=[
