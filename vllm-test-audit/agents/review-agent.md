@@ -60,7 +60,9 @@ For each candidate, decide:
 
 ### 4. Produce output
 
-**You MUST use the exact output format defined in the audit contract.** Do not write free-form prose, markdown headers, decision tree narratives, or bullet-point analysis. Every candidate must be a structured block matching the contract's output format with all fields present.
+**You MUST use the exact structured block format.** See [example-review.md](example-review.md) for correct and incorrect output examples.
+
+Do not write free-form prose, markdown headers, decision tree narratives, or bullet-point analysis. Every candidate must be a structured block with all fields present. No exceptions.
 
 After all candidate blocks, end with the Evidence Summary and a summary table.
 
