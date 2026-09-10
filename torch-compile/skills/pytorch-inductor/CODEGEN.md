@@ -430,60 +430,65 @@ the scheduler decides the fusion is legal (see [FUSION.md](FUSION.md)),
 `codegen_node_schedule_with_kernel()` drives the two-pass codegen through
 the marked schedule.
 
-Staged reduction fusion builds on this mechanism. A staged plan describes the
-parent reduction, nested/grouped reduction, and any derived pointwise epilogue
-domains. Since loop normalization can change ranges after scheduling, codegen
-validates or rebuilds the final staged plan before emitting the kernel.
+Staged reduction fusion builds on this mechanism, but cannot rely on the
+ordinary marker schedule alone. A staged plan describes parent work, optional
+grouped-reduction work, and any derived pointwise epilogue domains. Since loop
+normalization can change ranges after scheduling, codegen validates or rebuilds
+the final staged plan before emitting the kernel.
 
-## Nested Reduction Codegen
+## Derived-Domain Staged Codegen
 
-When a `FusedNestedReductions` staged plan reaches codegen, specialized
-machinery in `codegen/simd.py` handles the multi-resolution tile layout and
-emits the planned reduction and pointwise stages:
+Specialized codegen can execute a stage at a different resolution from the
+parent reduction tile. This supports both a reduction pipeline with a grouped
+stage and a reduction with a derived-resolution pointwise epilogue.
+`FusedStagedReduction` is dispatched to this path; `FusedNestedReductions`
+selects the dependent grouped-reduction form.
 
-### `_GroupedReductionLayout`
+### Codegen Contract
 
-Maps a kernel's range trees onto a grouped reduction structure with three
-axes: passthrough (rows that don't participate in reduction), group
-(reduction groups), and local reduction (elements within a group). Handles
-the geometric layout of tiles and provides methods for broadcasting values
-between resolutions.
+1. **Establish the parent tile.** Parent work owns the kernel grid and its
+   reduction behavior.
+2. **Enter a derived iteration domain.** A grouped reduction or epilogue may
+   use a different coordinate system and resolution. Codegen maps its indices
+   and output locations into that domain for the duration of the stage.
+3. **Resolve inputs faithfully.** A derived-stage value is forwarded from a
+   parent computation only when the fusion plan proved that relation. Otherwise
+   it is loaded in the derived domain. This prevents accidentally treating a
+   same-named buffer as the same logical value.
+4. **Preserve masking and value shape.** Tail masks and broadcasts must follow
+   the remapped value's actual domain, not simply the parent tile's domain.
+5. **Respect lifetime boundaries.** A looped reduction may not keep all parent
+   values live until a later stage. Codegen schedules required producers in the
+   final usable portion of the parent computation, forwards live values when
+   possible, and otherwise reloads safely.
 
-### `_DerivedIterationFamily`
+The result is still one kernel, but it is structured as a sequence of proven
+iteration domains rather than a single, universally valid loop nest.
 
-Defines a derived iteration space for consumer stages that operate at a
-different resolution than the parent reduction. Contains:
+### Why Plan Validation Is Repeated
 
-- `index_subs` — rewrite body iteration variables to derived tree symbols
-- `remap_index()` — transform a sympy index expression from the consumer's
-  natural space to the derived space
+Loop normalization and scheduling decisions can alter the representation of
+the parent loops after fusion. Therefore the code generator does not blindly
+replay a speculative schedule-time plan: it validates or reconstructs the
+mapping from the final fused nodes. A missing or inconsistent mapping at this
+point is an internal compiler error; an unprovable mapping during fusion should
+have taken the normal fallback path.
 
-When active on a kernel, the derived family's range trees replace the
-kernel's own for the duration of the consumer stage.
+### Codegen-Side Optimization Boundaries
 
-### `_PointwiseRemapHandler`
-
-A `WrapperHandler` that intercepts `load` and `store` to transparently
-remap indices via a `_DerivedIterationFamily`. This is the mechanism for
-handler wrapping — a general pattern where an outer handler intercepts
-specific ops, transforms their arguments, and delegates to the inner handler:
-
-```python
-class _PointwiseRemapHandler(WrapperHandler):
-    def load(self, name, index):
-        remapped = self._family.remap_index(index)
-        return self._inner.load(name, remapped)
-```
-
-Handler wrapping is the codegen-side counterpart to the scheduler's fusion
-decision. The scheduler decides "these can share a kernel," and the wrapped
-handler makes that work by translating between iteration spaces at codegen
-time.
+Staged codegen may preserve a narrow value while a sequence of safe pointwise
+operations can use it, allowing ordinary common-subexpression elimination to
+share work. It materializes or widens that value at stores, masks, mixed-domain
+operations, and other boundaries where the narrower representation is no
+longer proven equivalent. These choices are implementation details; the stable
+requirement is that they never change the program's visible indexing or
+numerical semantics.
 
 ## Key Files
 
 - `codegen/common.py` — Kernel base, CSE, IndentedBuffer, OpOverrides, WrapperHandler
-- `codegen/simd.py` — SIMDKernel, SIMDScheduling, range trees, `_GroupedReductionLayout`, `_DerivedIterationFamily`, `_PointwiseRemapHandler`
+- `codegen/simd.py` — SIMD scheduling, range-tree construction, derived-domain
+  remapping, source resolution, and staged emission
 - `codegen/simd_kernel_features.py` — Schedule markers (`DisableReduction`, `EnableReduction`)
 - `codegen/triton.py` — TritonKernel, TritonOverrides, TritonScheduling
 - `codegen/cpp.py` — CppKernel, CppOverrides, CppScheduling

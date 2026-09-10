@@ -32,9 +32,9 @@ actual logic has at least five branches:
    fails, falls through to:
    - `MixOrderReduction.can_fuse` — can the two reductions share a
      mixed-order loop?
-   - `NestedReduction` staged-plan check — are these reductions over the same
-     logical elements at different granularities, with compatible pointwise
-     domains and source relationships?
+   - Staged-plan check — are these reductions over the same logical elements
+     at different granularities, with compatible pointwise domains and source
+     relationships?
    - Native-matmul tiling compatibility
 
 4. **Non-reduction pairs** — requires `numel` and `rnumel` match, with
@@ -42,9 +42,9 @@ actual logic has at least five branches:
 
 5. **Reduction + Pointwise epilogue** — when one node is a reduction and the
    other is pointwise, args are swapped and re-checked. Standard epilogues use
-   a two-pass kernel; staged nested reductions can additionally place pointwise
-   consumers in a derived sub-parent domain when their accesses and layouts
-   are proven compatible.
+   a two-pass kernel; multi-domain staged fusion can additionally place
+   pointwise consumers in a derived domain when their accesses and layouts are
+   proven compatible.
 
 ## Key Data Structure: `MemoryDep`
 
@@ -100,50 +100,61 @@ mean = x.mean(keepdim=True); norm = x - mean
 # Enabled by DisableReduction/EnableReduction schedule markers (see CODEGEN.md)
 ```
 
-**Nested Reduction**:
+**Multi-Domain Staged Fusion**:
 ```python
-# Two dependent reductions over the same elements at different granularity
-# e.g., layernorm (per-row) + block amax (per-block-of-rows)
-# Detected by NestedReduction, planned as staged fusion, then represented by
-# a FusedNestedReductions node
+# A reduction may feed a grouped reduction or an epilogue at a different
+# resolution. A staged plan lets those domains share one kernel when proven safe.
 ```
 
-## Nested Reduction Subsystem
+## Multi-Domain Staged Fusion
 
-When a reduction's output feeds another reduction at a different
-granularity, the standard `(numel, rnumel)` match is insufficient. The
-nested reduction subsystem handles this:
+Most fusion uses one common iteration domain, so matching groups and ordinary
+dependency checks are sufficient. A reduction can also feed work at a different
+granularity: a grouped reduction, or a pointwise epilogue that consumes a
+derived portion of the parent tile. Those cases require an explicit staged plan
+rather than a relaxed version of ordinary fusion.
 
-### Scheduler side (`scheduler.py`)
+### Staged Fusion Contract
 
-- **`NestedReduction`** — builds a staged plan for an outer reduction and a
-  dependent grouped reduction. The plan classifies pointwise work by domain,
-  records the parent and nested stages, and may add a derived sub-parent
-  epilogue when the access relationships are valid.
+1. **Prove dataflow, not just shape.** A shared buffer name or equal element
+   count does not show that a derived-domain read reaches the producer value
+   intended by the original graph. Fusion must prove the source-to-consumer
+   index mapping.
+2. **Record the stage structure.** The plan identifies parent work, optional
+   grouped-reduction work, derived epilogue work, their order, and the values
+   that must be available across those stages.
+3. **Preserve observable ordering.** Aliasing, mutation, indirect accesses,
+   ambiguous writers, non-leaf outputs, and dependencies that would be moved
+   across a stage boundary make the plan unsafe.
+4. **Validate after loop changes.** Fusion planning precedes transformations
+   that may normalize or merge loops. Before specialized codegen, the plan is
+   rebuilt or validated against the final loop structure.
+5. **Decline safely.** An unprovable staged fusion is not a compiler failure:
+   Inductor retains the ordinary schedule and its materialized intermediates.
 
-- **`FusedStagedReduction`** — common scheduler abstraction for fused reductions
-  that require multiple codegen stages.
+This distinction matters when debugging: normal fusion legality asks whether
+nodes may share a kernel; staged fusion additionally asks whether their
+different coordinate systems and execution times can be reconciled exactly.
 
-- **`FusedNestedReductions`** — nested-reduction specialization of staged
-  fusion. It is not merely a pairwise wrapper; it carries the approved stage
-  structure used by codegen.
+### What It Covers
 
-Upstream pointwise nodes can be modeled as local reduction inputs when they are
-already part of the approved nested topology. The stack primarily expands the
-downstream reduction-to-pointwise epilogue side, rather than adding a general
-pointwise-to-reduction fusion path.
+- A dependent reduction at a different granularity from its parent reduction.
+- A standalone reduction followed by a derived-resolution pointwise epilogue.
+- A nested reduction with a compatible derived-resolution epilogue.
 
-Fusion planning occurs before final loop normalization. Because normalization
-can change iteration domains, codegen validates or rebuilds the staged plan
-from the normalized nodes.
+These are intentionally narrow patterns. They do not make arbitrary
+cross-domain producer-consumer fusion legal.
 
-### Codegen side (`codegen/simd.py`)
+### Interaction with Scheduling Choices
 
-The codegen machinery that executes a `FusedNestedReductions` plan is
-described in [CODEGEN.md](CODEGEN.md#nested-reduction-codegen). The key
-classes are `_GroupedReductionLayout` (tile geometry),
-`_DerivedIterationFamily` (derived iteration space), and
-`_PointwiseRemapHandler` (index remapping).
+Generic fusion benchmarking and multi-kernel grouping assume ordinary node
+shapes and schedules. A staged group may therefore decline those optional
+optimizations when they cannot represent its derived domain. That is a
+performance trade-off, not a change to the staged fusion's correctness
+contract.
+
+For how a validated plan becomes a kernel, see
+[CODEGEN.md — Derived-Domain Staged Codegen](CODEGEN.md#derived-domain-staged-codegen).
 
 ## Scheduler Node Types
 
@@ -153,8 +164,8 @@ The scheduler wraps IR nodes in its own type hierarchy for fusion tracking:
 BaseSchedulerNode
 ├── SchedulerNode              — single IR operation
 ├── FusedSchedulerNode         — multiple operations fused into one kernel
-│   └── FusedStagedReduction    — multi-stage reduction fusion
-│       └── FusedNestedReductions — nested reduction specialization
+│   └── FusedStagedReduction   — plan-carrying multi-domain fusion
+│       └── FusedNestedReductions — dependent grouped-reduction specialization
 ├── ExternKernelSchedulerNode  — external call (matmul, conv)
 ├── NopKernelSchedulerNode     — eliminated operation
 └── ForeachKernelSchedulerNode — multi-tensor operation
@@ -179,11 +190,10 @@ for node in nodes:
     if node.is_template():           → codegen_template()
     elif node.is_extern():           → codegen_extern_call()
     elif node.is_foreach():          → codegen_combo_kernel()
-    elif FusedStagedReduction:       → specialized staged-reduction codegen
-    elif FusedMixOrderReductions:    → codegen_mix_order_reduction()
-    elif FusedSchedulerNode/
-         SchedulerNode:              → backend.codegen_node()   # main SIMD path
-    else:                            → node.mark_run()          # NopKernel
+    elif FusedStagedReduction:       → specialized staged codegen
+    elif specialized reduction group: → its dedicated codegen path
+    elif ordinary fused/single node: → backend codegen
+    else:                            → mark the eliminated operation run
 ```
 
 The type-based routing pattern is stable. Specific node types may be added or
@@ -221,8 +231,8 @@ above) becomes executable: the scheduler decides the fusion is legal, then
 markers flush the loop, and the epilogue runs as pointwise code consuming
 the reduction result — all in one kernel.
 
-Staged reductions extend this structure with explicit parent, nested, and
-derived epilogue stages. The scheduler decides which stages are legal, and
+Staged reductions extend this structure with explicit parent, optional grouped,
+and derived epilogue stages. The scheduler decides which stages are legal, and
 specialized codegen emits the corresponding structured schedule.
 
 ### The Bridge to Kernel Codegen
@@ -258,10 +268,117 @@ point for memory planning (see
 generation but before the kernel call is emitted, ensuring buffers exist when
 the kernel runs.
 
+## Extending Fusion
+
+Use this playbook when an intended fusion cannot be expressed by an existing
+fusion family. Begin with the program transformation and its invariants, then
+choose the smallest extension that preserves them. Do not start by relaxing a
+generic fusion predicate: a broader predicate is difficult to audit and can
+silently make unrelated graphs incorrect.
+
+### 1. Classify the Transformation
+
+First decide which existing execution model the transformation needs:
+
+- **Ordinary fusion**: all operations share one iteration domain and the
+  normal producer-consumer or sibling rules describe the relationship.
+- **Staged fusion**: operations need more than one compatible iteration domain,
+  such as a parent reduction and a derived consumer domain.
+- **Template or external-kernel epilogue fusion**: a specialized kernel owns
+  part of the computation and exposes a supported epilogue interface.
+- **Graph rewrite or pattern replacement**: the desired transformation changes
+  the graph before ordinary scheduling is the right abstraction.
+
+Prefer an existing family when its contract fits. Introduce a new
+plan-carrying representation only when ordinary fused groups cannot faithfully
+describe the required execution domains or ordering.
+
+In the current scheduler, `FusedStagedReduction` is the common plan-carrying
+representation. `FusedNestedReductions` specializes it for a dependent grouped
+reduction nested in a parent reduction. These are useful anchors when tracing
+the implementation; the plan and its semantic invariants, rather than the
+types' particular fields, are the lasting contract.
+
+### 2. Prove Legality Before Considering Speed
+
+State the semantic proof the fusion requires. At minimum, account for:
+
+- **Dataflow**: every consumer reads the producer value intended by the
+  original graph. Equal element counts or a shared buffer name are not enough
+  when iteration domains differ.
+- **Index mapping**: express accesses in a common coordinate system and prove
+  the source-to-consumer mapping. Unknown or indirect accesses are not a basis
+  for a precise equivalence proof.
+- **Ordering**: preserve dependencies that make reordering observable,
+  including mutation and aliasing constraints.
+- **Lifetime**: a value forwarded in registers must be live at the consumer;
+  otherwise it must be materialized or safely reloaded.
+- **Backend capability**: only form the fusion when its target code generator
+  can represent the resulting schedule and layout.
+
+Encode the proof as explicit planner facts or a plan that codegen consumes.
+Avoid duplicating loosely similar index arithmetic in legality and codegen;
+those implementations can drift apart while still appearing individually
+reasonable.
+
+### 3. Define the Schedule–Codegen Contract
+
+Fusion analysis and codegen observe the same lowered computation at different
+times and sometimes in different loop representations. Give both sides one
+source of truth for any new relationship: a shared pure mapping, or facts
+produced by planning and validated by codegen.
+
+For multi-domain fusion, the plan should state the participating stages, their
+iteration domains, ordering, and required source-value relationships. Validate
+or reconstruct the plan after transformations that can normalize, merge, or
+otherwise change loops. If a proof cannot be formed while deciding fusion,
+decline the fusion. If a previously accepted plan cannot be reconstructed at
+codegen, surface that as an internal compiler error rather than generating a
+kernel from a guessed mapping.
+
+### 4. Make Materialization and Resource Effects Explicit
+
+Fusion changes which intermediates are kernel-local. Ensure that scheduling,
+wrapper generation, and memory planning agree on whether a buffer is
+materialized, forwarded, reloaded, or freed. When a derived stage changes
+value resolution or masking, preserve the source program's visible indexing,
+tail behavior, and numerical semantics.
+
+### 5. Keep Profitability Separate
+
+Legality answers whether a fusion preserves semantics; profitability answers
+whether to take a legal fusion. Do not let an estimated benefit relax a
+correctness condition.
+
+When a legal fusion can regress performance, assess it using the same schedule
+and codegen choices that will be emitted, and compare it with the unfused
+baseline. If the cost cannot be evaluated reliably, do not let the
+profitability guard reject the fusion solely on that uncertainty. Any
+speculative scheduling mutation used for pricing must be fully reversible.
+
+### 6. Land and Expand Incrementally
+
+Start with one end-to-end topology whose legality proof, codegen path, and
+tests are complete. Then broaden one dimension at a time: first quantitative
+variation such as shape or partitioning, then qualitatively different layouts,
+dataflow, or backends. Keep each capability boundary explicit and covered by a
+test so later expansion is intentional.
+
+### 7. Test at Three Altitudes
+
+1. **Proof tests**: test symbolic mappings and dependency predicates directly,
+   including unknown-access and ambiguous-producer rejection cases.
+2. **Scheduling tests**: assert that eligible graphs form the intended fusion
+   and ineligible graphs deliberately retain a safe fallback.
+3. **End-to-end tests**: check numerics against an unfused reference and verify
+   the relevant generated-kernel properties. Cover dynamic shapes,
+   non-contiguous layouts, masked tails, and alternative reduction execution
+   forms when they apply.
+
 ## Key Files
 
-- `scheduler.py` — `can_fuse` scoring, `NestedReduction`,
-  `FusedNestedReductions`, `_codegen()` dispatch loop, `compute_last_usage()`
+- `scheduler.py` — fusion legality and scoring, staged-plan construction,
+  dispatch, and buffer-lifetime analysis
 - `dependencies.py` — `MemoryDep`, `StarDep`, `WeakDep`, dependency analysis
 - `codegen/simd.py` — `SIMDScheduling.can_fuse()`, `codegen_node()`,
   `generate_node_schedule()`, `codegen_node_schedule()`,
