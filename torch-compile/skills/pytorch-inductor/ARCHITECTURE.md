@@ -126,8 +126,8 @@ def add_lowering(a, b):
 BaseSchedulerNode
 ├── SchedulerNode (single operation)
 ├── FusedSchedulerNode (fused operations)
-│   └── FusedStagedReduction (multi-stage reduction fusion)
-│       └── FusedNestedReductions (nested reduction specialization)
+│   └── FusedStagedReduction (plan-carrying multi-domain reduction fusion)
+│       └── FusedNestedReductions (dependent grouped-reduction specialization)
 ├── ExternKernelSchedulerNode (external call)
 ├── NopKernelSchedulerNode (eliminated)
 └── ForeachKernelSchedulerNode (multi-tensor)
@@ -138,13 +138,13 @@ BaseSchedulerNode
 2. Topologically sort operations
 3. Determine fusion legality (`can_fuse` — binary gate)
 4. Score and rank legal fusions (separate from legality)
-5. Construct specialized staged plans when a fusion spans multiple domains
+5. Construct an explicit staged plan when a fusion spans multiple domains
 6. Compute buffer lifetimes
 7. Apply memory planning
 8. Generate kernel code per node
 9. Generate wrapper orchestration
 
-See [FUSION.md](FUSION.md) for the full `can_fuse` decision tree, `MemoryDep` data model, and nested reduction subsystem.
+See [FUSION.md](FUSION.md) for the full `can_fuse` decision tree, `MemoryDep` data model, and multi-domain staged fusion.
 
 ### 4. Memory Planning
 
@@ -307,11 +307,12 @@ Node IR → [scheduler wraps] → Schedule IR → [trace inner_fn] → Loop-Leve
 `SchedulerNode`, extracts `read_writes` (the `MemoryDep` objects used for
 fusion analysis — see [FUSION.md](FUSION.md)), tracks dependencies via
 `ancestors` and `unmet_dependencies`, and assigns a `group` key
-`(device, (numel, rnumel))` for fusion matching. Fusion produces
-`FusedSchedulerNode` (multiple Node IR nodes in one kernel) or specialized
-staged nodes such as `FusedNestedReductions`. A staged node carries the
-validated structure needed to emit parent, nested, and derived pointwise
-stages.
+`(device, (numel, rnumel))` for fusion matching. Fusion produces ordinary
+fused groups or plan-carrying staged groups. A staged group records the proven
+structure needed to emit parent work, optional grouped reduction work, and
+derived pointwise stages without changing the graph's dataflow semantics.
+The current plan-carrying types are `FusedStagedReduction` and its
+`FusedNestedReductions` specialization.
 
 ### 3. Loop-Level IR (`loop_body.py`)
 
@@ -379,7 +380,7 @@ def gelu_decomposition(x, approximate="none"):
 
 ## Scheduling & Fusion
 
-See [FUSION.md](FUSION.md) for fusion legality, scoring, the `MemoryDep` data model, and the nested reduction subsystem.
+See [FUSION.md](FUSION.md) for fusion legality, scoring, the `MemoryDep` data model, and multi-domain staged fusion.
 
 ---
 
@@ -408,7 +409,7 @@ GraphLowering.run() (interpret nodes, build IR, apply constraints)
     ↓
 Scheduler (dependencies, fusion plans, lifetimes, memory planning)
     ↓
-Loop-domain normalization / final staged-plan validation
+Loop-domain normalization / validation of staged dataflow mappings
     ↓
 Code Generation (Triton/C++ kernels, wrapper code)
     ↓
@@ -429,7 +430,7 @@ Output: Compiled Function (callable, JIT-compiled kernels)
 - `ir.py`: IR node definitions
 
 ### Fusion Decisions
-- `scheduler.py`: Fusion legality, scoring, `NestedReduction`, staged plans, and `FusedNestedReductions`
+- `scheduler.py`: Fusion legality, scoring, staged plans, and codegen dispatch
 - `dependencies.py`: `MemoryDep`, `StarDep`, dependency analysis
 - `codegen/simd.py`: `SIMDScheduling.can_fuse()`, node schedule generation
 

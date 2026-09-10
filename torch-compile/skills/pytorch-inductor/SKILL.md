@@ -102,18 +102,29 @@ Uses **SymPy** extensively for reasoning about shapes, strides, and indexing:
 ### Scheduling & Fusion
 The scheduler wraps Node IR in **Schedule IR** (`SchedulerNode`, `FusedSchedulerNode`) — adding dependency tracking, `MemoryDep` access patterns, and fusion group keys. Some fusion families also construct an explicit staged plan that describes multiple iteration domains and how codegen should emit them. Fusion is a two-phase process — **legality** then **scoring** — that are architecturally distinct:
 
-**Legality** (`can_fuse` in `SIMDScheduling`): A multi-branch decision tree. Not a simple "same numel" check — branches handle reduction pairs (including nested reduction dependent pairs), non-reduction pairs (with template exceptions), and reduction+pointwise epilogues.
+**Legality**: A multi-branch decision tree. Not a simple "same numel" check — branches handle reduction pairs (including dependent pairs at different granularities), non-reduction pairs (with template exceptions), and reduction+pointwise epilogues.
 
 **Scoring**: Ranks legal candidates by memory traffic saved.
 
-**Fusion patterns**: vertical (producer-consumer), horizontal (consumer-consumer), reduction+epilogue (two-pass kernel), and staged nested reduction (`FusedNestedReductions`).
+**Fusion patterns**: vertical (producer-consumer), horizontal (consumer-consumer), reduction+epilogue (two-pass kernel), and multi-domain staged fusion.
 
-#### Staged Nested-Reduction Fusion
+#### Multi-Domain Staged Fusion
 
-Nested-reduction fusion is plan-based: `NestedReduction` validates compatible
-reduction and pointwise domains and produces a staged `FusedNestedReductions`
-node. The plan may include derived pointwise epilogues and is finalized after
-loop-domain normalization.
+Most fused kernels use one iteration domain. Some reduction pipelines cannot:
+a grouped reduction or a packing/quantization epilogue may operate at a
+different resolution from its parent tile. For these cases, scheduling creates
+an explicit plan for the parent work, any grouped-reduction work, and any
+derived epilogue work. Specialized codegen executes that plan as one kernel.
+In the current scheduler, `FusedStagedReduction` is the common representation
+for such work; `FusedNestedReductions` is its specialization for a dependent
+grouped reduction inside a parent reduction.
+
+The plan is a correctness contract, not merely a performance hint. Cross-domain
+reads must be proved to map to the intended producer values, and stage ordering,
+aliasing, mutation, and value lifetimes must remain safe. A plan is validated
+again after transformations that can change loop structure. If those conditions
+cannot be established during scheduling, Inductor leaves the work on the normal
+multi-kernel path.
 
 **Files**: `scheduler.py`, `dependencies.py`, `codegen/simd.py`
 **Deep dive**: [FUSION.md](FUSION.md)
@@ -126,7 +137,7 @@ Each `SchedulerNode`'s `inner_fn` is traced into **Loop-Level IR** (`LoopBody` �
 - **C++** (`codegen/cpp.py`) - CPU kernels with vectorization and OpenMP
 - **CUDA** (`codegen/cuda/`) - Direct CUDA for specialized cases
 
-**IR progression**: Node IR → Schedule IR and staged plans → Loop-Level IR → Codegen IR → executable
+**IR progression**: Node IR → Schedule IR and, when needed, staged plans → Loop-Level IR → Codegen IR → executable
 **Deep dive**: [CODEGEN.md](CODEGEN.md), [ARCHITECTURE.md — IR Levels](ARCHITECTURE.md)
 
 ### Memory Planning
@@ -193,7 +204,7 @@ config.coordinate_descent_tuning = True  # Advanced tuning
 
 ## Performance Optimization
 
-See [FUSION.md](FUSION.md) for fusion patterns (vertical, horizontal, reduction+epilogue, nested reduction).
+See [FUSION.md](FUSION.md) for fusion patterns (vertical, horizontal, reduction+epilogue, and multi-domain staged fusion).
 
 **Auto-tuning**: `config.max_autotune = True` and `config.coordinate_descent_tuning = True` for aggressive kernel tuning.
 
@@ -234,6 +245,11 @@ class MyTest(TestCase):
 
         self.assertEqual(fn(x), compiled_fn(x))
 ```
+
+For multi-domain staged fusion, test the result against an unfused execution and
+include dynamic shapes, non-contiguous layouts, masked tails, and both looped
+and persistent reduction forms where applicable. Add negative cases for inputs
+that must safely fall back rather than fuse.
 
 ## Progressive Disclosure
 
