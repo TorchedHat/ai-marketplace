@@ -1,7 +1,7 @@
 ---
 name: test-refactor-agent
 version: 1.0.0
-description: PyTorch test refactoring specialist. Analyzes test files, classifies test classes by hardware requirement (GENERIC/DEVICE_GENERIC/DEVICE_SPECIFIC/MULTI_DEVICE_GENERIC/MULTI_DEVICE_SPECIFIC), splits mixed classes, adds hw_classification attributes, converts hardcoded device references, and verifies the refactoring.
+description: PyTorch test refactoring specialist. Analyzes test files, classifies test classes by hardware requirement (GENERIC/ACCELERATOR/CPU/CUDA/MPS/XPU), splits mixed classes, adds hw_classification attributes, converts hardcoded device references, and verifies the refactoring passes the TEST_LINTER.
 skills:
   - test-refactor
 callable_agents:
@@ -16,7 +16,7 @@ callable_agents:
 
 You are a **PyTorch test refactoring specialist**. Your expertise covers:
 - Analyzing PyTorch test files for device coupling
-- Classifying test classes into the 5 hardware categories
+- Classifying test classes into the hardware categories (GENERIC, ACCELERATOR, CPU, CUDA, MPS, XPU)
 - Splitting mixed test classes into single-responsibility classes
 - Converting hardcoded device references to device-agnostic patterns
 - Adding `hw_classification` attributes following the community standard
@@ -65,7 +65,7 @@ Return a structured summary after completing the refactoring:
   ],
   "classes_after": [
     {"name": "TestFooGeneric", "methods": 8, "classification": "GENERIC"},
-    {"name": "TestFooDeviceGeneric", "methods": 5, "classification": "DEVICE_GENERIC"},
+    {"name": "TestFooAccelerator", "methods": 5, "classification": "ACCELERATOR"},
     {"name": "TestFooCUDA", "methods": 2, "classification": "CUDA"}
   ],
   "total_methods_before": 15,

@@ -16,17 +16,20 @@ Checklist for reviewing PyTorch device-agnostic test refactoring PRs. Every item
 - [ ] `@onlyCPU` classes are NOT automatically classified as GENERIC — examine actual logic first (PRECEDENTS: fffrog #185881)
 - [ ] `world_size=1` or `@skip_if_lt_x_gpu(1)` classes are NOT classified as multi-accelerator — match classification to runtime requirements (PRECEDENTS: mansiag05 #190082)
 
+See also: [TEST_LINTER Compliance](#test_linter-compliance) section for CI-enforced classification rules.
+
 ## Structure
 
 - [ ] **Test count preserved** — every `test_*` method from the original file exists in the refactored version (no deletions)
 - [ ] **setUp/tearDown duplicated** — when splitting a class, each new class has its own setUp/tearDown if the original had one, with `super().setUp()` call
 - [ ] **Class-level decorators preserved** — when moving test methods, class decorators are either applied to the new class or moved to individual methods
 - [ ] **`instantiate_device_type_tests` correct** — called with proper `only_for`, `except_for`, `allow_xpu`, `allow_mps` parameters
+- [ ] **`instantiate_device_type_tests` consistent with classification** — when a PR adds `hw_classification` to a class, verify its existing `instantiate_device_type_tests` call is compatible (e.g., ACCELERATOR must not use `only_for`; device-specific must use `only_for`). Pre-existing calls are the PR's responsibility once it classifies the class.
 - [ ] **`only_for` matches original** — if the original class had device restrictions, they are preserved in the refactored version (PRECEDENTS: fffrog #181889)
 - [ ] **No gratuitous renames** — classes that aren't being split should NOT be renamed, just add `hw_classification` (PRECEDENTS: fffrog #185881)
 - [ ] **No device names in instantiated classes** — don't name a class `TestFooCUDA` and pass it to `instantiate_device_type_tests` (creates `TestFooCUDACUDA`) (PRECEDENTS: albanD #185802)
 - [ ] **No manual mixin splitting** — use `instantiate_device_type_tests()` + decorators, not `TestFooMixin` → `TestFooCUDA(TestFooMixin)` (PRECEDENTS: jbschlosser #188331)
-- [ ] **`instantiate_device_type_tests` not used for device-specific classes** — use real device names directly (PRECEDENTS: fffrog + albanD #185881, #185802)
+- [ ] **Device-specific classes use `instantiate_device_type_tests` with `only_for`** — e.g., `instantiate_device_type_tests(TestFooCUDA, globals(), only_for="cuda")` (TEST_LINTER PR #190173 — supersedes earlier PRECEDENTS from #185881, #185802)
 - [ ] **Helpers at first use** — no helper methods defined where they aren't invoked (PRECEDENTS: fffrog #182432)
 - [ ] **No unused intermediate variables** — use `device_type` directly, don't assign to `use_device` first (PRECEDENTS: fffrog #182434)
 - [ ] **No separate classes for tests that just need an accelerator** — use `@onlyAccelerator` decorator within device-type class instead (PRECEDENTS: fffrog #185881)
@@ -107,6 +110,35 @@ Checklist for reviewing PyTorch device-agnostic test refactoring PRs. Every item
 - [ ] **PR under 2000 LOC** — split larger PRs into multiple
 - [ ] **No `[skip ci]`** in commit messages — CI must run
 - [ ] **`lintrunner -a` clean** — no lint failures in modified files
+- [ ] **`TEST_LINTER` clean** — `python tools/linter/adapters/test_linter.py -- test/<file>.py` produces no errors
+
+## TEST_LINTER Compliance
+
+These rules are enforced by the `TEST_LINTER` linter ([PR #190173](https://github.com/pytorch/pytorch/pull/190173)). Violations will fail CI.
+
+### `hw_classification` Declaration
+- [ ] **`hw_classification` form** — must use exact form `hw_classification = HardwareClassification.<MEMBER>` or `hw_classification: HardwareClassification = HardwareClassification.<MEMBER>` (no aliased imports)
+
+### GENERIC Rules
+- [ ] **GENERIC: no `instantiate_device_type_tests`** — GENERIC classes must not be passed to `instantiate_device_type_tests`
+- [ ] **GENERIC: no `device`/`devices` parameter** — GENERIC test methods must not accept `device` or `devices` parameters
+
+### ACCELERATOR Rules
+- [ ] **ACCELERATOR: uses `instantiate_device_type_tests`** — ACCELERATOR classes must be instantiated via `instantiate_device_type_tests`
+- [ ] **ACCELERATOR: `device`/`devices` parameter on every test method** — every test method in ACCELERATOR classes must accept `device` or `devices`
+- [ ] **ACCELERATOR: no `only_for`** — `instantiate_device_type_tests` must not use `only_for` for ACCELERATOR classes (use `except_for` for blacklist approach instead)
+- [ ] **ACCELERATOR: no device-specific `@only*` decorators** — must not use `@onlyCPU`, `@onlyCUDA`, `@onlyMPS`, `@onlyXPU`, `@onlyHPU`, `@onlyPRIVATEUSE1`, `@onlyOn`, `@onlyCUDAAndPRIVATEUSE1`, `@onlyNativeDeviceTypes`, `@onlyNativeDeviceTypesAnd` (except `@onlyAccelerator`)
+
+### Device-Specific Rules (CPU/CUDA/MPS/XPU)
+- [ ] **Device-specific: uses `instantiate_device_type_tests`** — device-specific classes must use `instantiate_device_type_tests`
+- [ ] **Device-specific: `only_for` matches device** — `instantiate_device_type_tests` must use `only_for` matching exactly the device (e.g., `only_for='cuda'`)
+- [ ] **Device-specific: no `except_for`** — device-specific classes must not use `except_for`
+- [ ] **MPS: `allow_mps=True`** — MPS classes must pass `allow_mps=True` in `instantiate_device_type_tests`
+- [ ] **XPU: `allow_xpu=True`** — XPU classes must pass `allow_xpu=True` in `instantiate_device_type_tests`
+
+### Allowlist
+- [ ] **File removed from allowlist** — if the file was in `tools/linter/adapters/test_linter_allowlist.json`, it must be removed after refactoring
+- [ ] **`python tools/linter/adapters/test_linter.py -- test/<file>.py`** — produces no errors when run against the refactored file
 
 ## PR Format
 

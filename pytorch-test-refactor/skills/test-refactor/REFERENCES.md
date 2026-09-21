@@ -78,7 +78,10 @@ These files in the PyTorch repo implement the testing infrastructure:
 | Category | Enum Value | When to Use |
 |----------|-----------|-------------|
 | GENERIC | `HardwareClassification.GENERIC` | CPU-only logic, no device dependency |
-| DEVICE_GENERIC | `HardwareClassification.DEVICE_GENERIC` | Works on any accelerator |
-| DEVICE_SPECIFIC | `HardwareClassification.CUDA` / `.XPU` / `.MPS` | Locked to one accelerator |
-| MULTI_DEVICE_GENERIC | `HardwareClassification.MULTI_DEVICE_GENERIC` | Multi-device, any backend |
-| MULTI_DEVICE_SPECIFIC | `HardwareClassification.MULTI_DEVICE_SPECIFIC` | Multi-device, specific backend |
+| ACCELERATOR | `HardwareClassification.ACCELERATOR` | Works on any accelerator via `instantiate_device_type_tests` |
+| CPU | `HardwareClassification.CPU` | CPU-locked (use sparingly) |
+| CUDA | `HardwareClassification.CUDA` | CUDA-locked (CUDA memory, cuDNN, CUDA graphs) |
+| MPS | `HardwareClassification.MPS` | MPS-locked (MPS graph API, Metal-specific) |
+| XPU | `HardwareClassification.XPU` | XPU-locked (XPU-specific kernels) |
+| MULTI_DEVICE_GENERIC | `HardwareClassification.MULTI_DEVICE_GENERIC` | Multi-device, any backend (planned, not yet in linter) |
+| MULTI_DEVICE_SPECIFIC | `HardwareClassification.MULTI_DEVICE_SPECIFIC` | Multi-device, specific backend (planned, not yet in linter) |

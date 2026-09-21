@@ -13,7 +13,7 @@ This file is the sole source of reviewer guidance. It is refreshed at a regular 
 
 Do not classify `@onlyCPU` tests as GENERIC automatically.
 Many are historical — the test logic may be device-agnostic.
-Examine the actual logic first. If it works on accelerators, keep it in DEVICE_GENERIC and remove the decorator. Defer to follow-up PRs if uncertain.
+Examine the actual logic first. If it works on accelerators, keep it in ACCELERATOR and remove the decorator. Defer to follow-up PRs if uncertain.
 Why: @fffrog rejected auto-classification in [#185881](https://github.com/pytorch/pytorch/pull/185881).
 
 Do not classify a test as MULTI_ACCELERATOR based on class name alone.
@@ -31,20 +31,21 @@ Why: @albanD caught this in [#185802](https://github.com/pytorch/pytorch/pull/18
 Do not rename classes that aren't being split.
 Just add `hw_classification`. Only rename when splitting into multiple classes.
   ✗ `TestReductions` → `TestReductionsDevice` (unnecessary churn)
-  ✓ `TestReductions` + `hw_classification = HardwareClassification.DEVICE_GENERIC`
+  ✓ `TestReductions` + `hw_classification = HardwareClassification.ACCELERATOR`
 Why: @fffrog rejected gratuitous renames in [#185881](https://github.com/pytorch/pytorch/pull/185881).
 
-Do not use `instantiate_device_type_tests` for device-specific classes.
-Use real device names directly in the class.
-  ✗ `TestReductionOnlyCPU` → `instantiate_device_type_tests(..., only_for="cpu")`
-  ✓ `TestReductionCPU` with `hw_classification = HardwareClassification.CPU`
-Why: @fffrog + @albanD aligned on this in [#185881](https://github.com/pytorch/pytorch/pull/185881), [#185802](https://github.com/pytorch/pytorch/pull/185802).
+Device-specific classes must use `instantiate_device_type_tests` with `only_for`.
+The TEST_LINTER (PR [#190173](https://github.com/pytorch/pytorch/pull/190173)) now requires `instantiate_device_type_tests` for all device-specific classes, with `only_for` matching the device. This supersedes earlier guidance from #185881/#185802 that avoided `instantiate_device_type_tests` for device-specific classes.
+  ✓ `TestReductionCPU` with `hw_classification = HardwareClassification.CPU` + `instantiate_device_type_tests(TestReductionCPU, globals(), only_for="cpu")`
+  ✗ `TestReductionCPU` with `hw_classification = HardwareClassification.CPU` and no `instantiate_device_type_tests` call
+Why: TEST_LINTER PR [#190173](https://github.com/pytorch/pytorch/pull/190173) formalized the requirement.
 
-Do not manually split classes into mixin + device-specific subclasses.
-Use `instantiate_device_type_tests()` + decorators (`@onlyCUDA`, `@skipMPS`, `@onlyAccelerator`) for device variation.
+Do not manually create per-device subclasses from a mixin for device variation.
+Use `instantiate_device_type_tests()` + decorators (`@onlyCUDA`, `@skipMPS`, `@onlyAccelerator`) instead.
   ✗ `TestFooMixin` → `TestFooCUDA(TestFooMixin)` + `TestFooXPU(TestFooMixin)`
   ✓ `TestFoo` → `instantiate_device_type_tests(TestFoo, globals())`
-Why: @jbschlosser rejected manual splitting in [#188331](https://github.com/pytorch/pytorch/pull/188331).
+Why: @jbschlosser rejected manual per-device subclassing in [#188331](https://github.com/pytorch/pytorch/pull/188331).
+Note: This does NOT prohibit copying shared test methods onto a class via `setattr` to work around `instantiate_device_type_tests` only renaming methods directly on the class (not inherited ones). That pattern is a valid workaround for `MultiProcessTestCase`-based distributed tests where standard inheritance doesn't interact correctly with `instantiate_device_type_tests`.
 
 Do not create separate classes for tests that just need an accelerator.
 Use `@onlyAccelerator` decorator within the existing device-type class instead of `@onlyCUDA`.

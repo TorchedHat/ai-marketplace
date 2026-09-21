@@ -61,6 +61,40 @@ class TestMyFeatureDevice(TestCase):
 instantiate_device_type_tests(TestMyFeatureDevice, globals())
 ```
 
+### TEST_LINTER Enforced Rules
+
+The `TEST_LINTER` ([PR #190173](https://github.com/pytorch/pytorch/pull/190173)) enforces these invariants in CI via lintrunner. Violations block the PR.
+
+**GENERIC:**
+- Must NOT be used with `instantiate_device_type_tests`
+- Test methods must NOT accept `device` or `devices` parameter
+
+**ACCELERATOR:**
+- Must be used with `instantiate_device_type_tests`
+- Every test method must accept `device` or `devices` parameter
+- Must NOT use `only_for` in `instantiate_device_type_tests` (use `except_for` for blacklist approach)
+- Test methods must NOT use device-specific `@only*` decorators except `@onlyAccelerator`
+  - Forbidden decorators: `@onlyCPU`, `@onlyCUDA`, `@onlyMPS`, `@onlyXPU`, `@onlyHPU`, `@onlyPRIVATEUSE1`, `@onlyOn`, `@onlyCUDAAndPRIVATEUSE1`, `@onlyNativeDeviceTypes`, `@onlyNativeDeviceTypesAnd`
+
+**CPU / CUDA / MPS / XPU (device-specific):**
+- Must be used with `instantiate_device_type_tests`
+- Every test method must accept `device` or `devices` parameter
+- `instantiate_device_type_tests` must use `only_for` matching the device (e.g., `only_for='cuda'`)
+- Must NOT use `except_for`
+- MPS classes must pass `allow_mps=True`
+- XPU classes must pass `allow_xpu=True`
+
+**`hw_classification` attribute form:**
+- Only exact forms accepted:
+  - `hw_classification = HardwareClassification.<MEMBER>`
+  - `hw_classification: HardwareClassification = HardwareClassification.<MEMBER>`
+- Aliased imports are NOT recognized by the linter (e.g., `HC = HardwareClassification; hw_classification = HC.GENERIC` will fail)
+
+**Allowlist:**
+- Files in `tools/linter/adapters/test_linter_allowlist.json` are temporarily exempt from all checks
+- After refactoring a file, remove it from the allowlist so the linter enforces compliance going forward
+- Newly created test files are NOT in the allowlist and must comply immediately
+
 ### CLI Verification
 
 ```bash
@@ -140,6 +174,12 @@ When converting a test from CUDA-specific to device-agnostic (`ACCELERATOR`), ap
 | `@onlyCPU` class auto-classified as `GENERIC` | `@onlyCPU` implies device awareness | Check if test is truly device-irrelevant |
 | `world_size=1` test classified as multi-accelerator | Single-process distributed may be `GENERIC` | Evaluate if device matters |
 | Missing `HardwareClassification` import | Code will fail at runtime | Add import from `common_utils` |
+| `only_for` used with ACCELERATOR class | Linter requires blacklist approach | Remove `only_for`, use `except_for` instead |
+| `except_for` used with device-specific class | Linter forbids `except_for` for device-specific | Remove `except_for`, use `only_for` matching device |
+| Missing `allow_mps=True` for MPS class | Linter requires opt-in for MPS | Add `allow_mps=True` to `instantiate_device_type_tests` |
+| Missing `allow_xpu=True` for XPU class | Linter requires opt-in for XPU | Add `allow_xpu=True` to `instantiate_device_type_tests` |
+| Aliased `HardwareClassification` import | Linter only recognizes unaliased form | Use `HardwareClassification.<MEMBER>` directly |
+| File not removed from allowlist after refactoring | Linter skips allowlisted files | Remove from `test_linter_allowlist.json` |
 
 ### Structural Mistakes
 
@@ -194,6 +234,10 @@ When converting a test from CUDA-specific to device-agnostic (`ACCELERATOR`), ap
 | `@skipIf(IS_MACOS)` for dtype constraints | **Warning** |
 | Manual config save/restore in ACCELERATOR class | **Warning** |
 | `self_cuda_time_total` (deprecated) | **Warning** |
+| `only_for` in ACCELERATOR `instantiate_device_type_tests` | **Warning** |
+| Missing `allow_mps=True` / `allow_xpu=True` for MPS/XPU classes | **Warning** |
+| File still in TEST_LINTER allowlist after refactoring | **Warning** |
+| Aliased HardwareClassification import (e.g., `HC = HardwareClassification`) in class body | **Warning** |
 | `NotImplementedError` without issue number | **Suggestion** |
 
 ### Good Patterns (expected in well-refactored PRs)
@@ -211,6 +255,10 @@ When converting a test from CUDA-specific to device-agnostic (`ACCELERATOR`), ap
 | `get_profiler_activities(device_type)` | Correct profiler API |
 | `self_device_time_total` | Non-deprecated profiler API |
 | `make_tensor(shape, device=device, dtype=dtype)` | Proper tensor creation |
+| `except_for=["cpu"]` in ACCELERATOR `instantiate_device_type_tests` | Correct blacklist approach |
+| `only_for="cuda"` in CUDA `instantiate_device_type_tests` | Correct whitelist for device-specific |
+| `allow_mps=True` in MPS `instantiate_device_type_tests` | Required opt-in |
+| File removed from `test_linter_allowlist.json` | Proves linter compliance |
 
 ## `instantiate_device_type_tests` Reference
 
@@ -246,4 +294,4 @@ Creates device-specific subclasses automatically:
 
 ---
 
-*Based on merged PR [#186918](https://github.com/pytorch/pytorch/pull/186918) and upstream review feedback from the test refactoring initiative. Last updated: August 2026.*
+*Based on merged PR [#186918](https://github.com/pytorch/pytorch/pull/186918), TEST_LINTER PR [#190173](https://github.com/pytorch/pytorch/pull/190173), and upstream review feedback from the test refactoring initiative. Last updated: September 2026.*
