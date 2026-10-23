@@ -29,24 +29,24 @@ python -m torch._inductor.compiler_bisector run python repro.py
 - Exit code 0 = PASS, 1 = FAIL
 - Use `os.environ.get("TORCH_COMPILE_BACKEND", "inductor")` to select backend
 - Call `torch._dynamo.reset()` at start for clean state
-- Use `torch._inductor.utils.fresh_cache()` context manager to ensure clean compilation cache
+
+The CLI shares bisector state with its test subprocess through the Inductor cache directory. Do not change `TORCHINDUCTOR_CACHE_DIR` inside the test script: `fresh_cache()` changes it, hiding the run state and bisect range during later probes. The CLI starts a new Python process for each probe. In the in-process `CompilerBisector.do_bisect()` workflow, bisector state lives in a separate temporary directory, so `fresh_cache()` can be used there when needed.
 
 **Minimal example:**
 ```python
 import os, sys, torch
-from torch._inductor.utils import fresh_cache
 
 torch._dynamo.reset()
 backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
 
-with fresh_cache():
-    @torch.compile(backend=backend)
-    def fn(x):
-        return x.sin().argmin()  # Your failing operation
+@torch.compile(backend=backend)
+def fn(x):
+    return x.sin().argmin()  # Your failing operation
 
-    result = fn(torch.randn(10))
-    expected = torch.randn(10).sin().argmin()
-    sys.exit(0 if torch.equal(result, expected) else 1)
+x = torch.randn(10)
+result = fn(x)
+expected = x.sin().argmin()
+sys.exit(0 if torch.equal(result, expected) else 1)
 ```
 
 
