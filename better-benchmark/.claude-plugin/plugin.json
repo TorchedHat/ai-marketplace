@@ -1,0 +1,15 @@
+{
+  "name": "better-benchmark",
+  "displayName": "Better Benchmark Model Extraction",
+  "version": "1.0.0",
+  "description": "Extract representative model fusion regions into better-benchmark with memory-conscious construction, generated corpus artifacts, and artifact validation.",
+  "skills": "./skills/",
+  "keywords": [
+    "pytorch",
+    "torch.compile",
+    "better-benchmark",
+    "fusion",
+    "model-extraction",
+    "tlparse"
+  ]
+}
