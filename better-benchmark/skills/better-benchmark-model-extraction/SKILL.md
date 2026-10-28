@@ -28,6 +28,11 @@ Python environment. Read applicable checkout instructions, including
 sections of `README.md` when present. Check git state, installed import paths,
 existing captures, and GPU capacity; preserve unrelated work.
 
+Use the user's configured interpreter explicitly for every Python command.
+Import installed better-benchmark modules directly; inspect their `__file__`
+locations when locating checkout-only CLI scripts or missing internal helpers.
+Do not assume that installation exposes every checkout module or CLI.
+
 Execution requires compatible PyTorch/CUDA and an available GPU with sufficient
 memory. Export requires tlparse. HF construction requires transformers and
 config access; use huggingface_hub when resolving remote revisions. Inspect the
@@ -55,9 +60,17 @@ BF16 inference policy where supported, preserving integer/bool inputs and
 explicit internal higher-precision operations. For an existing export, record
 available provenance and identify missing evidence rather than inventing it.
 
-Do not guess, ask user what they want. Continue asking questions until either
-every value is specieed by a default in a config or the user has answered every
-remaining field.
+Resolve material choices such as model variant, input dimensions, and expert
+backend before launching source capture, including smoke runs. Use explicit
+config defaults and established corpus conventions for routine choices and
+record them. Inspection, config comparison, and meta-device memory estimates
+can proceed while answers are pending. Earlier diagnostic traces are not
+evidence for the agreed workload and must not enter its corpus addition.
+
+Check the published config against constructor defaults: attention schedules,
+RoPE settings, and quantization can differ even when dimensions match. Record
+the resolved dispatch, since a decorated HF module may replace its visible
+Python `forward` with a different expert implementation.
 
 ### 2. Select coverage
 
@@ -84,10 +97,18 @@ exception, and missing acceptance checks.
 
 ## Scope and failure rules
 
-- Keep handwritten workload setup and short invocations of existing APIs in
-  retained scratch storage outside the repository. Corpus additions contain
-  generator-produced code/data plus documentation; record each code producer.
-  Do not add a permanent model-specific driver or importer.
+- Keep a small reproduction bundle in the requested scratch/specs directory:
+  original/effective configs, necessary generation scripts, exact run commands,
+  and any input files those commands require. Keep generated corpus artifacts
+  and model documentation in better-benchmark. Put compiler caches, trace/HTML
+  exports, logs, staging corpora, and detailed reports in standard cache/temp
+  locations unless the user requests otherwise. Retain a selected runnable in
+  the bundle when replay needs it; do not retain its entire export directory.
+- Use existing validators directly. Do not create a model-specific validation
+  script, duplicate their checks, or write a Python wrapper merely to supply
+  file paths. Short workload construction and capture API invocations are
+  appropriate where existing CLIs cannot express the workload. Record each
+  generated code producer; do not add a permanent model-specific importer.
 - Use structured artifacts, existing loaders, and live FX graphs. Do not
   regex/AST-parse generated source or hand-edit graphs, repros, manifests,
   metadata, shapes, or attribution.
@@ -98,6 +119,10 @@ exception, and missing acceptance checks.
 - A smoke compile, in-memory success, or metadata-only check cannot replace
   production-shape and saved-artifact execution. Preserve validators and
   explain pre-existing failures with baseline evidence.
+- Graph breaks are allowed for FX-pattern extraction unless the user requires
+  one complete graph. Track captured regions, eager gaps, recompilations, and
+  occurrences. A fullgraph failure does not establish an extraction blocker;
+  Dynamo capture success does not establish successful Inductor lowering.
 - Extraction checks execution and corpus structure, not numerical accuracy or
   performance. Do not invoke `validate_full_graph_numerics` or
   `run_numerics_gate` for extraction alone; missing FP64 support is not a gate.

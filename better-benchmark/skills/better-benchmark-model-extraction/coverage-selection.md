@@ -27,6 +27,17 @@ followed by truncation or an FP32 model plus a BF16 copy. Use eval/no-grad for
 inference. Fake/meta capture and selective materialization are not assumed
 capabilities; use them only if existing repository APIs support the workload.
 
+Verify actual parameter/buffer dtypes after construction. Config-based random
+initialization may not apply the loader's FP32-module retention rules. Preserve
+the model's declared precision behavior explicitly where necessary. A BF16
+architecture capture from an FP8 checkpoint config is not FP8 execution.
+
+Select the intended operator backend before capture. Eager expert loops,
+grouped matrix multiplication, and batched matrix multiplication can implement
+the same routing math with different FX patterns. Do not switch between them
+just to eliminate graph breaks. Capture separate workload identities when
+multiple implementations are requested.
+
 Keep smoke inputs separate from production inputs. In particular, a shorter
 sequence can change local/global attention behavior and is not evidence of
 production-shape coverage. Output truncation can reduce allocation when the
