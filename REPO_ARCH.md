@@ -10,6 +10,16 @@ Multi-plugin marketplace for PyTorch development tools. Hosts multiple Claude Co
 ai-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json     # Marketplace catalog (lists all plugins)
+├── better-benchmark/        # Model fusion-region extraction guidance
+│   ├── .claude-plugin/
+│   │   └── plugin.json
+│   ├── README.md           # Requirements, usage, and file layout
+│   └── skills/
+│       └── better-benchmark-model-extraction/
+│           ├── SKILL.md
+│           ├── coverage-selection.md
+│           ├── api-reference.md
+│           └── artifact-workflow.md
 ├── torch-compile/           # PyTorch torch.compile debugging plugin
 │   ├── .claude-plugin/
 │   │   └── plugin.json      # Plugin configuration
@@ -109,6 +119,13 @@ callable_agents:
 ```
 
 ### Plugins
+
+**better-benchmark:**
+
+- 1 skill: better-benchmark-model-extraction
+- Model-independent representative block selection, memory-conscious HF/PyTorch construction, and generated corpus validation
+- Supporting reference for TORCH_TRACE, tlparse export, runnable replay, staging, and final integration
+- Uses existing checkouts and tools; no setup hooks, MCP servers, or custom capture infrastructure
 
 **torch-compile:**
 - 8 skills: compile-bisect, compile-overview, compile-trace-{aot,dynamo,inductor}, pytorch-{aot,dynamo,inductor}

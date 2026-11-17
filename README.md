@@ -22,6 +22,19 @@ See [CONTRIBUTION_GUIDELINES.md](CONTRIBUTION_GUIDELINES.md) for guidelines
 
 ## Available Tool Collections
 
+### Better Benchmark Model Extraction
+
+Model-independent guidance for adding representative fusion and kernel-shape coverage to better-benchmark.
+
+**Features:**
+
+- Select representative blocks from model structure and reduce depth before allocating weights
+- Preserve production widths, input shapes, and fusion boundaries while minimizing capture memory
+- Export compiler traces with tlparse and replay through existing capture and merge APIs
+- Validate generated full graphs, canonical repros, shape points, and corpus invariants
+
+See the [plugin documentation](better-benchmark/README.md) for requirements, usage, and the skill layout. Extraction and artifact validation are the default scope; numerical comparisons, oracle work, and benchmarking are separate unless requested.
+
 ### torch.compile Debugging Tools
 
 Multi-agent system for PyTorch compiler development with 10 skills and 4 specialized agents.
@@ -74,6 +87,7 @@ claude plugin install torch-compile
 claude plugin install torchtalk
 claude plugin install pytorch-test-refactor
 claude plugin install torch-distributed
+claude plugin install better-benchmark
 ```
 
 ## Using Marketplace Tools
@@ -86,6 +100,7 @@ Access skills directly:
 /pytorch-dynamo               # Dynamo implementation guidance
 /distributed-hang-diagnosis   # Distributed training hang patterns
 /skill-writer                 # Create new skills
+/better-benchmark:better-benchmark-model-extraction  # Extract model fusion regions
 ```
 
 ### Natural Language

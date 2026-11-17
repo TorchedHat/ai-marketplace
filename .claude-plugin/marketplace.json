@@ -8,6 +8,12 @@
   },
   "plugins": [
     {
+      "name": "better-benchmark",
+      "description": "Extract representative fusion regions from model definitions into better-benchmark with minimal capture memory and generated-artifact validation",
+      "category": "development",
+      "source": "./better-benchmark"
+    },
+    {
       "name": "torch-compile",
       "description": "PyTorch torch.compile debugging tools and workflow automation",
       "category": "development",
